@@ -31,3 +31,8 @@ function databaseConnection()
         die();
     }
 }
+
+function checkUrl($url)
+{
+    echo strpos($_SERVER['REQUEST_URI'], $url) !== false ? 'active' : '';
+}

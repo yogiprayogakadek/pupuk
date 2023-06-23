@@ -88,14 +88,14 @@ if (!isset($_SESSION['username'])) {
                         <div class="triangle"></div>
                     </li>
                     <?php if($_SESSION['role'] == 1) { ?>
-                    <li class="nav-item">
+                    <li class="nav-item <?php checkUrl('petani');?>">
                         <a class="nav-item-hold" href="<?= $baseUrl; ?>/views/petani">
                             <i class="nav-icon i-Administrator"></i>
                             <span class="nav-text">Petani</span>
                         </a>
                         <div class="triangle"></div>
                     </li>
-                    <li class="nav-item">
+                    <li class="nav-item <?php checkUrl('produk');?>">
                         <a class="nav-item-hold" href="<?= $baseUrl; ?>/views/produk">
                             <i class="nav-icon i-Bag"></i>
                             <span class="nav-text">Produk</span>
@@ -105,7 +105,7 @@ if (!isset($_SESSION['username'])) {
                     <?php } ?>
 
                     <?php if($_SESSION['role'] == 0) { ?>
-                    <li class="nav-item">
+                    <li class="nav-item <?php checkUrl('pembelian');?>">
                         <a class="nav-item-hold" href="<?= $baseUrl; ?>/views/pembelian">
                             <i class="nav-icon i-Add-Cart"></i>
                             <span class="nav-text">Pembelian</span>
@@ -113,7 +113,7 @@ if (!isset($_SESSION['username'])) {
                         <div class="triangle"></div>
                     </li>
                     <?php } ?>
-                    <li class="nav-item">
+                    <li class="nav-item <?php checkUrl('transaksi');?>">
                         <a class="nav-item-hold" href="<?= $baseUrl; ?>/views/transaksi">
                             <i class="nav-icon i-Money-Bag"></i>
                             <span class="nav-text">Transaksi</span>

@@ -7,12 +7,12 @@ $pageSub = 'Data';
 $db = databaseConnection();
 
 // data produk
-$query = "SELECT * FROM produk";
+$query = "SELECT * FROM produk WHERE jumlah_produk_kg > 0";
 $stmt = $db->query($query);
 $results = $stmt->fetchAll();
 
 // data keranjang
-$query2 = "SELECT a.id, a.kuantitas, c.nama_produk, c.harga_produk, c.gambar_produk, b.id as id_transaksi
+$query2 = "SELECT a.id, a.kuantitas, c.nama_produk, c.harga_produk, c.gambar_produk, b.id as id_transaksi, c.jumlah_produk_kg
             FROM detail_transaksi a
             JOIN transaksi b ON a.id_transaksi=b.id
             JOIN produk c ON c.id=a.id_produk
@@ -33,7 +33,7 @@ ob_start();
             <form id="form">
                 <div class="modal-body">
                     <div class="container-fluid">
-                        <input type="hidden" class="form-control id-produk" name="id_produk">
+                        <!-- <input type="hidden" class="form-control id-produk" name="id_produk"> -->
                         <div class="form-group">
                             <label for="kuantitas">Kuantitas</label>
                             <input type="text" class="form-control kuantitas" name="kuantitas" id="kuantitas" placeholder="masukkan kuantitas" max="10">
@@ -53,8 +53,23 @@ ob_start();
 <div class="row">
     <div class="col-5">
         <div class="card mb-4">
+            <div class="card-header">
+                <div class="row">
+                    <div class="col-12">
+                        Data Produk
+                    </div>
+                </div>
+            </div>
             <div class="card-body">
-                <table class="table table-hover table-stripped">
+                <div class="row">
+                    <div class="col-6">
+                        <p class="text-right mt-1">Cari Data</p>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" name="search" id="search" class="form-control search" placeholder="masukkan kata kunci...">
+                    </div>
+                </div>
+                <table class="table table-hover table-stripped mt-3" id="tableProduct">
                     <thead>
                         <tr>
                             <th>No</th>
@@ -74,7 +89,7 @@ ob_start();
                                 <td><?= $value['jumlah_produk_kg']; ?>kg</td>
                                 <td>Rp<?= number_format($value['harga_produk'], 0, ",", ".") ?></td>
                                 <td>
-                                    <button class="btn btn-cart btn-primary" data-id="<?= $value['id']; ?>" data-max="<?= $value['jumlah_produk_kg']; ?>" <?= $value['jumlah_produk_kg'] == 0 ? 'disabled' : ''; ?>>
+                                    <button class="btn btn-cart btn-primary" data-cat="addCart" data-id="<?= $value['id']; ?>" data-max="<?= $value['jumlah_produk_kg']; ?>" <?= $value['jumlah_produk_kg'] == 0 ? 'disabled' : ''; ?>>
                                         <i class="fa fa-cart-plus text-white pointer"></i>
                                     </button>
                                 </td>
@@ -121,6 +136,9 @@ ob_start();
                                     <td>Rp<?= number_format($v['harga_produk'], 0, ",", ".") ?>/kg</td>
                                     <td>Rp<?= number_format(($v['harga_produk'] * $v['kuantitas']), 0, ",", ".") ?></td>
                                     <td class="text-center">
+                                        <button class="btn btn-cart btn-success mr-2" data-id="<?= $v['id']; ?>" data-cat="updateCart" data-kuantitas="<?= $v['kuantitas']; ?>" data-max="<?= $v['jumlah_produk_kg']; ?>">
+                                            <i class="fa fa-pencil text-white pointer"></i>
+                                        </button>
                                         <button class="btn btn-delete btn-danger" data-transaksi="<?= $v['id_transaksi']; ?>" data-id="<?= $v['id']; ?>">
                                             <i class="fa fa-trash text-white pointer"></i>
                                         </button>
@@ -143,17 +161,17 @@ ob_start();
                         <?php endforeach; ?>
                     </tbody>
                     <?php if (count($data) > 0) { ?>
-                    <tfoot>
-                        <tr class="font-weight-bold font-italic">
-                            <td colspan="3" class="text-center">Total</td>
-                            <td id="sum-jumlah"></td>
-                            <td id="sum-harga"></td>
-                            <td id="sum-total"></td>
-                            <td class="text-center">
-                                <button class="btn btn-primary btn-proses"><i class="fa fa-arrow-right"></i> Proses</button>
-                            </td>
-                        </tr>
-                    </tfoot>
+                        <tfoot>
+                            <tr class="font-weight-bold font-italic">
+                                <td colspan="3" class="text-center">Total</td>
+                                <td id="sum-jumlah"></td>
+                                <td id="sum-harga"></td>
+                                <td id="sum-total"></td>
+                                <td class="text-center">
+                                    <button class="btn btn-primary btn-proses"><i class="fa fa-arrow-right"></i> Proses</button>
+                                </td>
+                            </tr>
+                        </tfoot>
                     <?php } ?>
                 </table>
             </div>
@@ -171,37 +189,50 @@ require_once('../../templates/master.php');
         $('body').on('click', '.btn-cart', function() {
             $('#modal').modal('show')
 
-            $('.id-produk').val($(this).data('id'))
-
+            let cat = $(this).data('cat');
             // set max weigth each item
             localStorage.setItem('maxWeight', parseInt($(this).data('max')));
+            localStorage.setItem('category', cat);
 
             $('#form').trigger('reset')
             $('.invalid-feedback').html('')
             $('.kuantitas').removeClass('is-invalid');
+
+            $('#modal .modal-body').find('.id-detail').remove();
+            $('#modal .modal-body').find('.id-produk').remove();
+            if (cat == 'addCart') {
+                var input = '<input type="hidden" class="form-control id-produk" name="id_produk">';
+                $('#modal .modal-body').append(input);
+                $('.id-produk').val($(this).data('id'))
+            } else {
+                var id_detail = $(this).data('id');
+                // var kuantitas = $(this).data('kuantitas');
+                var input = '<input type="hidden" class="form-control id-detail" id="id-detail" name="id_detail_transaksi" value=' + id_detail + '>';
+
+                $('#modal .modal-body').append(input);
+                // $('#modal .kuantitas').val(kuantitas)
+
+                // $('.btn-save').prop('disabled', false)
+            }
+
         })
 
         $('body').on('keyup', '.kuantitas', function() {
-            var value = parseInt($(this).val());
+            var value = $(this).val();
             var maxWeight = localStorage.getItem('maxWeight');
 
-            if (value > maxWeight) {
+            if (isNaN(value) || value <= 0) {
+                $(this).addClass('is-invalid');
+                $('.error-kuantitas').html('Field harus berisi angka positif');
+                $('.btn-save').prop('disabled', true);
+            } else if (parseInt(value) > parseInt(maxWeight)) {
                 $(this).addClass('is-invalid');
                 $('.error-kuantitas').html('Kuantitas melebihi stok yang tersedia');
-
-                $('.btn-save').prop('disabled', true)
+                $('.btn-save').prop('disabled', true);
             } else {
                 $(this).removeClass('is-invalid');
                 $('.error-kuantitas').html('');
-
-                $('.btn-save').prop('disabled', false)
-            }
-
-            if (isNaN(value)) {
-                $(this).addClass('is-invalid');
-                $('.error-kuantitas').html('Field tidak boleh kosong dan hanya angka yang diperbolehkan');
-
-                $('.btn-save').prop('disabled', true)
+                $('.btn-save').prop('disabled', false);
             }
         });
 
@@ -232,7 +263,7 @@ require_once('../../templates/master.php');
                 $('.form-control').removeClass('is-invalid');
                 let form = $("#form")[0];
                 let data = new FormData(form);
-                data.append('category', 'addCart')
+                data.append('category', localStorage.getItem('category'))
                 $.ajax({
                     type: "POST",
                     url: 'process.php',
@@ -240,6 +271,7 @@ require_once('../../templates/master.php');
                     processData: false,
                     contentType: false,
                     cache: false,
+                    dataType: "json",
                     success: function(response) {
                         Swal.fire(response.title, response.message, response.status);
                         $('#modal').modal('hide')
@@ -253,7 +285,7 @@ require_once('../../templates/master.php');
                         }
                     },
                     error: function(error) {
-                        // 
+                        console.log(error.responseText); // Log the response for debugging
                     },
                 });
             }
@@ -319,6 +351,45 @@ require_once('../../templates/master.php');
             })
         });
 
+        $('body').on('keyup', '.search', function() {
+            var search = $(this).val();
+            $("#tableProduct tbody").empty();
+            $.ajax({
+                type: "POST",
+                url: "process.php",
+                data: {
+                    category: 'searchProduct',
+                    keyword: search
+                },
+                dataType: "json",
+                success: function(result) {
+                    if (result.message != 'success') {
+                        var tr_list = '<tr>' +
+                            '<td colspan=6>' + '<h3 class=text-center>' + result.message + '</h3>' + '</td>' +
+                            '</tr>';
+                        $("#tableProduct tbody").append(tr_list);
+                    }
+                    $.each(result.data, function(index, value) {
+                        var tr_list = '<tr>' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td>' + '<img src="' + value.gambar_produk + '" width="100px">' + '</td>' +
+                            '<td>' + value.nama_produk + '</td>' +
+                            '<td>' + value.jumlah_produk_kg + 'kg' + '</td>' +
+                            '<td>' + 'Rp' + value.harga_produk.toLocaleString('id-ID', {
+                                minimumFractionDigits: 0
+                            }) + '</td>' +
+                            '<td>' +
+                            '<button class="btn btn-cart btn-primary" data-id="' + value.id + '" data-max="' + value.jumlah_produk_kg + '">' +
+                            '<i class="fa fa-cart-plus text-white pointer"></i>' +
+                            '</button>' +
+                            '</td>' +
+                            '</tr>';
+                        $("#tableProduct tbody").append(tr_list);
+                    });
+                }
+            });
+        });
+
         // Calculate sum of "Jumlah" and "Total" columns
         var sumJumlah = 0;
         var sumTotal = 0;
@@ -343,7 +414,11 @@ require_once('../../templates/master.php');
 
         // Update the total values in the table footer
         $('#sum-jumlah').text(sumJumlah + 'kg');
-        $('#sum-total').text('Rp' + sumTotal.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
-        $('#sum-harga').text('Rp' + sumHarga.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
+        $('#sum-total').text('Rp' + sumTotal.toLocaleString('id-ID', {
+            minimumFractionDigits: 0
+        }));
+        $('#sum-harga').text('Rp' + sumHarga.toLocaleString('id-ID', {
+            minimumFractionDigits: 0
+        }));
     });
 </script>

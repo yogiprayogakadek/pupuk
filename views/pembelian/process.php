@@ -184,4 +184,65 @@ if ($category == 'addCart') {
     } catch (PDOException $e) {
         echo "Error occurred: " . $e->getMessage();
     }
+} elseif ($category == 'searchProduct') {
+    try {
+        $keyword = $_POST['keyword'];
+        if ($keyword == '') {
+            $stmt = $db->prepare("SELECT * FROM produk WHERE jumlah_produk_kg > 0 ");
+        } else {
+            $stmt = $db->prepare("SELECT * FROM produk WHERE nama_produk LIKE CONCAT('%', :keyword, '%') AND jumlah_produk_kg > 0");
+            $stmt->bindParam(':keyword', $keyword);
+        }
+
+        $stmt->execute();
+
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        // Check if data was found
+        if ($data) {
+            // Return the data as JSON
+            header('Content-Type: application/json');
+            echo json_encode([
+                'data' => $data,
+                'message' => 'success'
+            ]);
+        } else {
+            // Return an error message if data was not found
+            // header('HTTP/1.1 404 Not Found');
+            echo json_encode(array('message' => 'Data tidak ada'));
+        }
+    } catch (PDOException $e) {
+        echo "Error occurred: " . $e->getMessage();
+    }
+} elseif ($category == 'updateCart') {
+    try {
+        $kuantitas = $_POST['kuantitas'];
+        $id_detail_transaksi = $_POST['id_detail_transaksi'];
+
+        $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id");
+        $stmt->bindParam(':id', $id_detail_transaksi);
+        $stmt->bindParam(':kuantitas', $kuantitas);
+        $stmt->execute();
+
+        // Check if the operation was successful
+        if ($stmt->rowCount() > 0) {
+            $response['status'] = 'success';
+            $response['message'] = 'Data berhasil di proses';
+            $response['title'] = 'Berhasil';
+        } else {
+            $response['status'] = 'error';
+            $response['message'] = 'Tidak ada perubahan data';
+            $response['title'] = 'Gagal';
+        }
+
+        // Set the appropriate response headers
+        header('Content-Type: application/json');
+
+        // Return the JSON response
+        echo json_encode($response);
+        exit;
+    } catch (PDOException $e) {
+        echo "Error occurred: " . $e->getMessage();
+        exit;
+    }
 }
