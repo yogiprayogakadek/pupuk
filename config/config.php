@@ -46,10 +46,11 @@ function getLengthData($id) {
     return $data->rowCount();
 }
 
-$category = $_POST['category'] ?? '';
-if($category == 'updatePassword') {
+$cate = $_POST['category'] ?? '';
+if($cate == 'updatePassword') {
     $messages = [];
     $current_password = $_POST['current_password'];
+    // $new_password = $_POST['new_password'];
     $new_password = password_hash($_POST['new_password'], PASSWORD_DEFAULT);
     $id_pengguna = $_POST['id_pengguna'];
 
@@ -63,7 +64,7 @@ if($category == 'updatePassword') {
 
     if($user && password_verify($current_password, $user['kata_sandi'])) {
         try {
-            $queryUpdate = $db->prepare('UPDATE `pengguna` SET kata_sandi = :new_password WHERE id = :id_pengguna');
+            $queryUpdate = $db->prepare("UPDATE pengguna SET kata_sandi = :new_password WHERE id = :id_pengguna");
             $queryUpdate->bindParam(':new_password', $new_password);
             $queryUpdate->bindParam(':id_pengguna', $id_pengguna);
             $queryUpdate->execute();
