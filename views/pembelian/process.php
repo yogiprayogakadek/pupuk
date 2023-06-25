@@ -148,9 +148,8 @@ if ($category == 'addCart') {
         $detail_transaksi->execute();
         $detailData = $detail_transaksi->fetchAll(PDO::FETCH_ASSOC);
 
-        $total = 0;
+        $total = $_POST['total'];
         foreach ($detailData as $row) {
-            $total += $row['harga_produk'];
 
             // update stok in produk table
             $updateStok = $db->prepare("UPDATE produk SET jumlah_produk_kg = jumlah_produk_kg - :kuantitas WHERE id = :id_produk");

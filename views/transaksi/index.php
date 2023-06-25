@@ -7,13 +7,14 @@ session_start();
 $db = databaseConnection();
 $role = $_SESSION['role'];
 
-if($role == 0) {
+if ($role == 0) {
     $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $_SESSION['id_pengguna'];
 } else {
     $query = "SELECT b.nama_lengkap, a.id, a.total, a.tanggal_transaksi
                 FROM transaksi a
                 JOIN pengguna b
-                ON a.id_pengguna=b.id WHERE is_done = 1";
+                ON a.id_pengguna=b.id WHERE a.is_done = 1";
+    // ON a.id_pengguna=b.id WHERE is_done = 1";
 }
 
 $stmt = $db->query($query);
@@ -65,8 +66,16 @@ ob_start();
         <div class="card mb-4">
             <div class="card-header">
                 <div class="row">
-                    <div class="col-12">
+                    <div class="col-6">
                         Data Transaksi
+                    </div>
+                    <div class="col-6 d-flex align-items-center">
+                        <div class="m-auto"></div>
+                        <a href="generate-pdf.php">
+                            <button type="button" class="btn btn-outline-primary btn-print">
+                                <i class="nav-icon i-Download1 font-weight-bold"></i> Print
+                            </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -76,8 +85,8 @@ ob_start();
                     <thead>
                         <tr>
                             <th>No</th>
-                            <?php if($role == 1) { ?>
-                            <th>Nama Pelanggan</th>
+                            <?php if ($role == 1) { ?>
+                                <th>Nama Pelanggan</th>
                             <?php } ?>
                             <th>Tanggal Transaksi</th>
                             <th>Total</th>
@@ -88,8 +97,8 @@ ob_start();
                         <?php foreach ($results as $key => $value) : ?>
                             <tr>
                                 <td><?= ($key + 1); ?></td>
-                                <?php if($role == 1) { ?>
-                                <td><?= $value['nama_lengkap']; ?></td>
+                                <?php if ($role == 1) { ?>
+                                    <td><?= $value['nama_lengkap']; ?></td>
                                 <?php } ?>
                                 <td><?= $value['tanggal_transaksi']; ?></td>
                                 <td>Rp<?= number_format($value['total'], 0, ",", ".") ?></td>
@@ -107,6 +116,53 @@ ob_start();
     </div>
 </div>
 
+
+<!-- <table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>No</th>
+            <th>Tanggal Transaksi</th>
+            <th colspan="5">Detail Transaksi</th>
+            <th>Total</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>23-06-2023</td>
+            <td colspan="5">
+                <table width="100%">
+                    <thead>
+                        <th>#</th>
+                        <th>Nama Produk</th>
+                        <th>Harga Produk</th>
+                        <th>Kuantitas</th>
+                        <th>Subtotal</th>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Pupuk Urea</td>
+                            <td>10.000</td>
+                            <td>1</td>
+                            <td>10.000</td>
+                        </tr>
+                        <tr>
+                            <td>1</td>
+                            <td>Pupuk Urea</td>
+                            <td>10.000</td>
+                            <td>1</td>
+                            <td>10.000</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </td>
+            <td>50.000</td>
+        </tr>
+    </tbody>
+</table> -->
+
+
 <?php
 $content = ob_get_clean();
 require_once('../../templates/master.php');
@@ -121,33 +177,39 @@ require_once('../../templates/master.php');
 
             var grandTotal = 0;
             $.ajax({
-                    type: "POST",
-                    url: "process.php",
-                    data: {
-                        id: id,
-                        category: 'getData'
-                    },
-                    dataType: "json",
-                    success: function (data) {
-                        $.each(data, function (index, value) { 
-                            var tr_list = '<tr>' +
-                                                '<td>' + (index+1) + '</td>' +
-                                                '<td>' + value.nama_produk + '</td>' +
-                                                '<td class="text-right">' + 'Rp' + value.harga_produk.toLocaleString('id-ID', { minimumFractionDigits: 0 }) + '</td>' +
-                                                '<td>' + value.kuantitas + 'kg' + '</td>' +
-                                                '<td class="text-right">' + 'Rp' + (value.harga_produk*value.kuantitas).toLocaleString('id-ID', { minimumFractionDigits: 0 }) + '</td>' +
-                                            '</tr>';
-                            $('#table tbody').append(tr_list);
-                        });
+                type: "POST",
+                url: "process.php",
+                data: {
+                    id: id,
+                    category: 'getData'
+                },
+                dataType: "json",
+                success: function(data) {
+                    $.each(data, function(index, value) {
+                        var tr_list = '<tr>' +
+                            '<td>' + (index + 1) + '</td>' +
+                            '<td>' + value.nama_produk + '</td>' +
+                            '<td class="text-right">' + 'Rp' + value.harga_produk.toLocaleString('id-ID', {
+                                minimumFractionDigits: 0
+                            }) + '</td>' +
+                            '<td>' + value.kuantitas + 'kg' + '</td>' +
+                            '<td class="text-right">' + 'Rp' + (value.harga_produk * value.kuantitas).toLocaleString('id-ID', {
+                                minimumFractionDigits: 0
+                            }) + '</td>' +
+                            '</tr>';
+                        $('#table tbody').append(tr_list);
+                    });
 
-                        $('#table tbody tr').each(function(key) {
-                            var subtotal = (parseFloat($(this).find('td:nth-child(5)').text().replace(/[^0-9]+/g, '')));
-                            grandTotal += subtotal;
-                        });
+                    $('#table tbody tr').each(function(key) {
+                        var subtotal = (parseFloat($(this).find('td:nth-child(5)').text().replace(/[^0-9]+/g, '')));
+                        grandTotal += subtotal;
+                    });
 
-                        $('#total').text('Rp' + grandTotal.toLocaleString('id-ID', { minimumFractionDigits: 0 }));
-                    }
-                });
+                    $('#total').text('Rp' + grandTotal.toLocaleString('id-ID', {
+                        minimumFractionDigits: 0
+                    }));
+                }
+            });
         })
     });
 </script>

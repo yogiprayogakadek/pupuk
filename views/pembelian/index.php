@@ -338,7 +338,8 @@ require_once('../../templates/master.php');
                         url: 'process.php',
                         type: 'POST',
                         data: {
-                            category: 'checkout'
+                            category: 'checkout',
+                            total: parseFloat($('#sum-total').text().replace(/[^0-9]+/g, ''))
                         },
                         success: function(response) {
                             Swal.fire(response.title, response.message, response.status);

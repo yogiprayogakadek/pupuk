@@ -65,7 +65,7 @@ if (!isset($_SESSION['username'])) {
                             <div class="dropdown-header">
                                 <i class="i-Lock-User mr-1"></i> <?= $_SESSION['username']; ?>
                             </div>
-                            <!-- <a class="dropdown-item">Account settings</a> -->
+                            <a class="dropdown-item" onclick="passwordModal();" href="javascript:void(0);">Change Password</a>
                             <a class="dropdown-item" onclick="event.preventDefault(); logout();" href="javascript:void(0);">Sign out</a>
                             <form id="logout-form" action="<?= $baseUrl; ?>/auth/logout.php" method="POST" class="d-none">
                                 <!-- Include any additional input fields if required -->
@@ -137,6 +137,33 @@ if (!isset($_SESSION['username'])) {
                 </div>
 
                 <div class="separator-breadcrumb border-top"></div>
+                <!-- Modal -->
+                <div class="modal fade" id="modalPassword" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Ubah password</h5>
+                            </div>
+                            <div class="modal-body">
+                                <form id="form_password">
+                                    <div class="form-group">
+                                        <input type="hidden" value="<?= $_SESSION['id_pengguna']; ?>" name="id_pengguna">
+                                        <label for="current_password">Password Lama</label>
+                                        <input type="password" class="form-control current-password" id="current_password" name="current_password">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="new_password">Password Baru</label>
+                                        <input type="password" class="form-control new-password" id="new_password" name="new_password">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Batal</button>
+                                <button type="button" class="btn btn-primary btn-password">Update</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
                 <?= $content; ?>
             </div>
@@ -203,6 +230,41 @@ if (!isset($_SESSION['username'])) {
                 cell.innerHTML = i + 1;
             });
         }).draw();
+
+        function passwordModal() {
+            $('#modalPassword').modal({
+                backdrop:'static',
+                keyboard: false
+            })
+        }
+
+        $('body').on('click', '.btn-password', function() {
+            let form = $("#form_password")[0];
+            let data = new FormData(form);
+            data.append('category', 'updatePassword');
+            $.ajax({
+                type: "POST",
+                url: '<?= $baseUrl; ?>/config/config.php',
+                data: data,
+                processData: false,
+                contentType: false,
+                cache: false,
+                success: function(response) {
+                    $("#formPassword").trigger("reset");
+                    $('#modalPassword').modal('hide')
+
+                    Swal.fire(response.title, response.message, response.status);
+                    if(response.status == 'success') {
+                        setTimeout(() => {
+                            location.reload()
+                        }, 1500)
+                    }
+                },
+                error: function(error) {
+                    // 
+                },
+            });
+        })
 
         function logout() {
             document.getElementById('logout-form').submit();
