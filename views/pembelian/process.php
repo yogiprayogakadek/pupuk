@@ -13,76 +13,71 @@ $response = array();
 
 if ($category == 'addCart') {
     try {
-        // assign the request form data to new variable
-        $id_produk = $_POST['id_produk'];
-        $kuantitas = $_POST['kuantitas'];
-        $is_done = false;
-        $tanggal_transaksi = date('Y-m-d');
-        $total = 0;
+        $id_produk = $_POST['id_produk']; // Mengambil nilai 'id_produk' dari input POST
+        $kuantitas = $_POST['kuantitas']; // Mengambil nilai 'kuantitas' dari input POST
+        $is_done = false; // Menginisialisasi variabel 'is_done' sebagai false
+        $tanggal_transaksi = date('Y-m-d'); // Mengambil tanggal saat ini dalam format 'YYYY-MM-DD'
+        $total = 0; // Menginisialisasi variabel 'total' sebagai 0
 
-        // check if is_done exists
-        $check = $db->prepare("SELECT * FROM transaksi WHERE id_pengguna = :id_pengguna AND is_done = :is_done");
-        $check->bindParam(':id_pengguna', $id_pengguna);
-        $check->bindParam(':is_done', $is_done);
-        $check->execute();
-        $dataCheck = $check->fetch(PDO::FETCH_ASSOC);
-        if ($check->rowCount() == 0) {
-            // if data in transaction which id_done is false, then insert a new transaksi and make a detail transaction
-            $stmt = $db->prepare("INSERT INTO transaksi (id_pengguna, tanggal_transaksi, total, is_done) VALUES (:id_pengguna, :tanggal_transaksi, :total, :is_done) ");
-            $stmt->bindParam(':tanggal_transaksi', $tanggal_transaksi);
-            $stmt->bindParam(':total', $total);
-            $stmt->bindParam(':id_pengguna', $id_pengguna);
-            $stmt->bindParam(':is_done', $is_done);
-            $stmt->execute();
+        $check = $db->prepare("SELECT * FROM transaksi WHERE id_pengguna = :id_pengguna AND is_done = :is_done"); // Menyiapkan query untuk memeriksa transaksi yang belum selesai berdasarkan 'id_pengguna'
+        $check->bindParam(':id_pengguna', $id_pengguna); // Mengikat parameter ':id_pengguna' dengan nilai 'id_pengguna'
+        $check->bindParam(':is_done', $is_done); // Mengikat parameter ':is_done' dengan nilai 'is_done'
+        $check->execute(); // Menjalankan query
+        $dataCheck = $check->fetch(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
 
-            $lastInsertedId = $db->lastInsertId();
-            if ($stmt->rowCount() > 0) {
-                // this line for insert product detail into detail transaction table
-                $detail = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) ");
-                $detail->bindParam(':id_transaksi', $lastInsertedId);
-                $detail->bindParam(':id_produk', $id_produk);
-                $detail->bindParam(':kuantitas', $kuantitas);
+        if ($check->rowCount() == 0) { // Jika tidak ada transaksi yang belum selesai untuk pengguna ini
+            $stmt = $db->prepare("INSERT INTO transaksi (id_pengguna, tanggal_transaksi, total, is_done) VALUES (:id_pengguna, :tanggal_transaksi, :total, :is_done) "); // Menyiapkan query untuk menyisipkan data baru ke dalam tabel 'transaksi'
+            $stmt->bindParam(':tanggal_transaksi', $tanggal_transaksi); // Mengikat parameter ':tanggal_transaksi' dengan nilai 'tanggal_transaksi'
+            $stmt->bindParam(':total', $total); // Mengikat parameter ':total' dengan nilai 'total'
+            $stmt->bindParam(':id_pengguna', $id_pengguna); // Mengikat parameter ':id_pengguna' dengan nilai 'id_pengguna'
+            $stmt->bindParam(':is_done', $is_done); // Mengikat parameter ':is_done' dengan nilai 'is_done'
+            $stmt->execute(); // Menjalankan query
 
-                $detail->execute();
+            $lastInsertedId = $db->lastInsertId(); // Mendapatkan ID terakhir yang disisipkan ke dalam tabel 'transaksi'
+            if ($stmt->rowCount() > 0) { // Jika data berhasil disisipkan ke dalam tabel 'transaksi'
+                $detail = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) "); // Menyiapkan query untuk menyisipkan data baru ke dalam tabel 'detail_transaksi'
+                $detail->bindParam(':id_transaksi', $lastInsertedId); // Mengikat parameter ':id_transaksi' dengan nilai 'lastInsertedId'
+                $detail->bindParam(':id_produk', $id_produk); // Mengikat parameter ':id_produk' dengan nilai 'id_produk'
+                $detail->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
 
-                // Check if the operation was successful
-                if ($detail->rowCount() > 0) {
-                    $response['status'] = 'success';
-                    $response['message'] = 'Produk berhasil ditambahkan ke keranjang';
-                    $response['title'] = 'Berhasil';
+                $detail->execute(); // Menjalankan query
+
+                if ($detail->rowCount() > 0) { // Jika data berhasil disisipkan ke dalam tabel 'detail_transaksi'
+                    $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+                    $response['message'] = 'Produk berhasil ditambahkan ke keranjang'; // Menetapkan pesan sukses
+                    $response['title'] = 'Berhasil'; // Menetapkan judul sukses
                 } else {
-                    $response['status'] = 'error';
-                    $response['message'] = 'Tidak ada perubahan data';
-                    $response['title'] = 'Gagal';
+                    $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+                    $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+                    $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
                 }
             }
         } else {
-            // this line mean when is_done is true then will insert in detail transaction only (doesn't need to insert a new data in transaction)
-            // check id produk in detail transaksi
-            $det = $db->prepare("SELECT * FROM detail_transaksi WHERE id_produk = :id_produk AND id_transaksi = :id_transaksi");
-            $det->bindParam(':id_transaksi', $dataCheck['id']);
-            $det->bindParam(':id_produk', $id_produk);
+            $det = $db->prepare("SELECT * FROM detail_transaksi WHERE id_produk = :id_produk AND id_transaksi = :id_transaksi"); // Menyiapkan query untuk memeriksa apakah produk sudah ada dalam keranjang
+            $det->bindParam(':id_transaksi', $dataCheck['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil pemeriksaan transaksi sebelumnya
+            $det->bindParam(':id_produk', $id_produk); // Mengikat parameter ':id_produk' dengan nilai 'id_produk'
 
-            $det->execute();
-            if ($det->rowCount() > 0) {
-                $response['status'] = 'info';
-                $response['message'] = 'Produk sudah ada pada keranjang';
-                $response['title'] = 'Info';
+            $det->execute(); // Menjalankan query
+            if ($det->rowCount() > 0) { // Jika ada hasil dari query (produk sudah ada dalam keranjang)
+                $response['status'] = 'info'; // Menetapkan status 'info' pada respon
+                $response['message'] = 'Produk sudah ada pada keranjang'; // Menetapkan pesan info
+                $response['title'] = 'Info'; // Menetapkan judul info
             } else {
-                $sql = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) ");
-                $sql->bindParam(':id_transaksi', $dataCheck['id']);
-                $sql->bindParam(':id_produk', $id_produk);
-                $sql->bindParam(':kuantitas', $kuantitas);
-                $sql->execute();
-                // Check if the operation was successful
-                if ($sql->rowCount() > 0) {
-                    $response['status'] = 'success';
-                    $response['message'] = 'Produk berhasil ditambahkan ke keranjang';
-                    $response['title'] = 'Berhasil';
+                $sql = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) "); // Menyiapkan query untuk menyisipkan data baru ke dalam tabel 'detail_transaksi'
+                $sql->bindParam(':id_transaksi', $dataCheck['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil pemeriksaan transaksi sebelumnya
+                $sql->bindParam(':id_produk', $id_produk); // Mengikat parameter ':id_produk' dengan nilai 'id_produk'
+                $sql->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
+                $sql->execute(); // Menjalankan query
+
+                // Periksa apakah operasi berhasil
+                if ($sql->rowCount() > 0) { // Jika penyisipan data berhasil
+                    $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+                    $response['message'] = 'Produk berhasil ditambahkan ke keranjang'; // Menetapkan pesan sukses
+                    $response['title'] = 'Berhasil'; // Menetapkan judul sukses
                 } else {
-                    $response['status'] = 'error';
-                    $response['message'] = 'Tidak ada perubahan data';
-                    $response['title'] = 'Gagal';
+                    $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+                    $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+                    $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
                 }
             }
         }
@@ -98,163 +93,131 @@ if ($category == 'addCart') {
     // Return the JSON response
     echo json_encode($response);
 } elseif ($category == 'delete') {
-    // assign form data request to new variable
-    $id = $_POST['id'];
-    $id_transaksi = $_POST['id_transaksi'];
+    $id = $_POST['id']; // Mengambil nilai 'id' dari input POST
+    $id_transaksi = $_POST['id_transaksi']; // Mengambil nilai 'id_transaksi' dari input POST
 
-    // check if last item in detail_transaksi
-    $check = $db->prepare("SELECT * FROM detail_transaksi WHERE id_transaksi = :id_transaksi");
-    $check->bindParam(':id_transaksi', $id_transaksi);
-    $check->execute();
+    $check = $db->prepare("SELECT * FROM detail_transaksi WHERE id_transaksi = :id_transaksi"); // Menyiapkan query untuk memeriksa apakah ada detail_transaksi dengan 'id_transaksi' yang diberikan
+    $check->bindParam(':id_transaksi', $id_transaksi); // Mengikat parameter ':id_transaksi' dengan nilai 'id_transaksi'
+    $check->execute(); // Menjalankan query
 
-    if ($check->rowCount() == 1) {
-        // delete transaksi
-        $transaksi = $db->prepare("DELETE FROM transaksi WHERE id = :id_transaksi");
-        $transaksi->bindParam(':id_transaksi', $id_transaksi);
-        $transaksi->execute();
+    if ($check->rowCount() == 1) { // Jika hanya ada 1 baris hasil dari query (hanya ada 1 detail_transaksi dengan 'id_transaksi' yang diberikan)
+        $transaksi = $db->prepare("DELETE FROM transaksi WHERE id = :id_transaksi"); // Menyiapkan query untuk menghapus transaksi berdasarkan 'id_transaksi'
+        $transaksi->bindParam(':id_transaksi', $id_transaksi); // Mengikat parameter ':id_transaksi' dengan nilai 'id_transaksi'
+        $transaksi->execute(); // Menjalankan query
     }
 
-    $stmt = $db->prepare("DELETE FROM detail_transaksi WHERE id = :id ");
-    $stmt->bindParam(':id', $id);
+    $stmt = $db->prepare("DELETE FROM detail_transaksi WHERE id = :id "); // Menyiapkan query untuk menghapus detail_transaksi berdasarkan 'id'
+    $stmt->bindParam(':id', $id); // Mengikat parameter ':id' dengan nilai 'id'
 
-    $stmt->execute();
+    $stmt->execute(); // Menjalankan query
 
-    // Check if the operation was successful
-    $response['status'] = 'success';
-        $response['message'] = 'Data berhasil dihapus';
-        $response['title'] = 'Berhasil';
-    // if ($stmt->rowCount() > 0) {
-    //     $response['status'] = 'success';
-    //     $response['message'] = 'Data berhasil dihapus';
-    //     $response['title'] = 'Berhasil';
-    // } else {
-    //     $response['status'] = 'error';
-    //     $response['message'] = 'Tidak ada perubahan data';
-    //     $response['title'] = 'Gagal';
-    // }
+    $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+    $response['message'] = 'Data berhasil dihapus'; // Menetapkan pesan sukses
+    $response['title'] = 'Berhasil'; // Menetapkan judul sukses
 
-    // Set the appropriate response headers
+    // Mengatur header respon yang tepat
     header('Content-Type: application/json');
 
-    // Return the JSON response
+    // Mengembalikan respon dalam format JSON
     echo json_encode($response);
 } elseif ($category == 'checkout') {
     try {
-        // check data in transaksi
-        $transaksi = $db->prepare("SELECT * FROM transaksi WHERE id_pengguna = :id_pengguna AND is_done = 0");
-        $transaksi->bindParam(':id_pengguna', $id_pengguna);
-        $transaksi->execute();
-        $data = $transaksi->fetch(PDO::FETCH_ASSOC);
+        $transaksi = $db->prepare("SELECT * FROM transaksi WHERE id_pengguna = :id_pengguna AND is_done = 0"); // Menyiapkan query untuk memilih transaksi yang belum selesai berdasarkan 'id_pengguna'
+        $transaksi->bindParam(':id_pengguna', $id_pengguna); // Mengikat parameter ':id_pengguna' dengan nilai 'id_pengguna'
+        $transaksi->execute(); // Menjalankan query
+        $data = $transaksi->fetch(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
 
-        // get data on detail transaksi
         $detail_transaksi = $db->prepare("SELECT a.kuantitas, b.harga_produk, b.id as id_produk
                                         FROM detail_transaksi a
                                         JOIN produk b
                                         ON a.id_produk=b.id
-                                        WHERE id_transaksi = :id_transaksi");
-        $detail_transaksi->bindParam(':id_transaksi', $data['id']);
-        $detail_transaksi->execute();
-        $detailData = $detail_transaksi->fetchAll(PDO::FETCH_ASSOC);
+                                        WHERE id_transaksi = :id_transaksi"); // Menyiapkan query untuk memperoleh detail transaksi, termasuk kuantitas dan harga produk, dengan melakukan join antara tabel 'detail_transaksi' dan 'produk'
+        $detail_transaksi->bindParam(':id_transaksi', $data['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil query transaksi sebelumnya
+        $detail_transaksi->execute(); // Menjalankan query
+        $detailData = $detail_transaksi->fetchAll(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
 
-        $total = $_POST['total'];
-        foreach ($detailData as $row) {
-
-            // update stok in produk table
-            $updateStok = $db->prepare("UPDATE produk SET jumlah_produk_kg = jumlah_produk_kg - :kuantitas WHERE id = :id_produk");
-            $updateStok->bindParam(':kuantitas', $row['kuantitas']);
-            $updateStok->bindParam(':id_produk', $row['id_produk']);
-            $updateStok->execute();
+        $total = $_POST['total']; // Mengambil nilai 'total' dari input POST
+        foreach ($detailData as $row) { // Melakukan iterasi untuk setiap data detail transaksi
+            $updateStok = $db->prepare("UPDATE produk SET jumlah_produk_kg = jumlah_produk_kg - :kuantitas WHERE id = :id_produk"); // Menyiapkan query untuk mengupdate stok produk
+            $updateStok->bindParam(':kuantitas', $row['kuantitas']); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas' dari data detail transaksi
+            $updateStok->bindParam(':id_produk', $row['id_produk']); // Mengikat parameter ':id_produk' dengan nilai 'id_produk' dari data detail transaksi
+            $updateStok->execute(); // Menjalankan query untuk mengupdate stok produk
         }
 
-        // update total and is_done in transaksi
-        $updateTransaksi = $db->prepare("UPDATE transaksi SET total = :total, is_done = 1 WHERE id = :id_transaksi");
-        $updateTransaksi->bindParam(':total', $total);
-        $updateTransaksi->bindParam(':id_transaksi', $data['id']);
-        $updateTransaksi->execute();
+        $updateTransaksi = $db->prepare("UPDATE transaksi SET total = :total, is_done = 1 WHERE id = :id_transaksi"); // Menyiapkan query untuk mengupdate transaksi dengan 'total' dan 'is_done'
+        $updateTransaksi->bindParam(':total', $total); // Mengikat parameter ':total' dengan nilai 'total'
+        $updateTransaksi->bindParam(':id_transaksi', $data['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil query transaksi sebelumnya
+        $updateTransaksi->execute(); // Menjalankan query untuk mengupdate transaksi
 
-        // Check if the operation was successful
-        if ($updateTransaksi->rowCount() > 0) {
-            $response['status'] = 'success';
-            $response['message'] = 'Data berhasil di proses';
-            $response['title'] = 'Berhasil';
+        if ($updateTransaksi->rowCount() > 0) { // Jika ada perubahan data pada transaksi
+            $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+            $response['message'] = 'Data berhasil di proses'; // Menetapkan pesan sukses
+            $response['title'] = 'Berhasil'; // Menetapkan judul sukses
         } else {
-            $response['status'] = 'error';
-            $response['message'] = 'Tidak ada perubahan data';
-            $response['title'] = 'Gagal';
+            $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+            $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+            $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
         }
 
-        // Set the appropriate response headers
-        header('Content-Type: application/json');
+        header('Content-Type: application/json'); // Mengatur header respon yang tepat
 
-        // Return the JSON response
-        echo json_encode($response);
+        echo json_encode($response); // Mengembalikan respon dalam format JSON
     } catch (PDOException $e) {
-        echo "Error occurred: " . $e->getMessage();
+        echo "Error occurred: " . $e->getMessage(); // Menampilkan pesan kesalahan jika terjadi exception
     }
 } elseif ($category == 'searchProduct') {
     try {
-        // assign form request to new variable
-        $keyword = $_POST['keyword'];
-        if ($keyword == '') {
-            // if the request are === '' will return all the data
-            $stmt = $db->prepare("SELECT * FROM produk WHERE jumlah_produk_kg > 0 ");
+        $keyword = $_POST['keyword']; // Mengambil nilai 'keyword' dari input POST
+
+        if ($keyword == '') { // Jika 'keyword' kosong
+            $stmt = $db->prepare("SELECT * FROM produk WHERE jumlah_produk_kg > 0 "); // Menyiapkan query untuk memilih semua produk yang memiliki jumlah stok lebih dari 0
         } else {
-            // return the data is match with the request
-            $stmt = $db->prepare("SELECT * FROM produk WHERE nama_produk LIKE CONCAT('%', :keyword, '%') AND jumlah_produk_kg > 0");
-            $stmt->bindParam(':keyword', $keyword);
+            $stmt = $db->prepare("SELECT * FROM produk WHERE nama_produk LIKE CONCAT('%', :keyword, '%') AND jumlah_produk_kg > 0"); // Menyiapkan query untuk memilih produk berdasarkan 'nama_produk' yang mengandung 'keyword' dan memiliki jumlah stok lebih dari 0
+            $stmt->bindParam(':keyword', $keyword); // Mengikat parameter ':keyword' dengan nilai 'keyword'
         }
 
-        $stmt->execute();
+        $stmt->execute(); // Menjalankan query
 
-        $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $data = $stmt->fetchAll(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
 
-        // Check if data was found
-        if ($data) {
-            // Return the data as JSON
-            header('Content-Type: application/json');
+        if ($data) { // Jika data produk ditemukan
+            header('Content-Type: application/json'); // Mengatur header respon yang tepat
             echo json_encode([
                 'data' => $data,
                 'message' => 'success'
-            ]);
+            ]); // Mengembalikan respon dalam format JSON dengan data produk dan pesan sukses
         } else {
-            // Return an error message if data was not found
-            // header('HTTP/1.1 404 Not Found');
-            echo json_encode(array('message' => 'Data tidak ada'));
+            echo json_encode(array('message' => 'Data tidak ada')); // Mengembalikan respon dalam format JSON dengan pesan bahwa data tidak ditemukan
         }
     } catch (PDOException $e) {
-        echo "Error occurred: " . $e->getMessage();
+        echo "Error occurred: " . $e->getMessage(); // Menampilkan pesan kesalahan jika terjadi exception
     }
 } elseif ($category == 'updateCart') {
     try {
-        // assign form request to new variable
-        $kuantitas = $_POST['kuantitas'];
-        $id_detail_transaksi = $_POST['id_detail_transaksi'];
+        $kuantitas = $_POST['kuantitas']; // Mengambil nilai 'kuantitas' dari input POST
+        $id_detail_transaksi = $_POST['id_detail_transaksi']; // Mengambil nilai 'id_detail_transaksi' dari input POST
 
-        // update data in cart
-        $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id");
-        $stmt->bindParam(':id', $id_detail_transaksi);
-        $stmt->bindParam(':kuantitas', $kuantitas);
-        $stmt->execute();
+        $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id"); // Menyiapkan query untuk mengupdate 'kuantitas' pada 'detail_transaksi' berdasarkan 'id_detail_transaksi'
+        $stmt->bindParam(':id', $id_detail_transaksi); // Mengikat parameter ':id' dengan nilai 'id_detail_transaksi'
+        $stmt->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
+        $stmt->execute(); // Menjalankan query
 
-        // Check if the operation was successful
-        if ($stmt->rowCount() > 0) {
-            $response['status'] = 'success';
-            $response['message'] = 'Data berhasil di proses';
-            $response['title'] = 'Berhasil';
+        if ($stmt->rowCount() > 0) { // Jika ada perubahan data pada 'detail_transaksi'
+            $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+            $response['message'] = 'Data berhasil di proses'; // Menetapkan pesan sukses
+            $response['title'] = 'Berhasil'; // Menetapkan judul sukses
         } else {
-            $response['status'] = 'error';
-            $response['message'] = 'Tidak ada perubahan data';
-            $response['title'] = 'Gagal';
+            $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+            $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+            $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
         }
 
-        // Set the appropriate response headers
-        header('Content-Type: application/json');
+        header('Content-Type: application/json'); // Mengatur header respon yang tepat
 
-        // Return the JSON response
-        echo json_encode($response);
-        exit;
+        echo json_encode($response); // Mengembalikan respon dalam format JSON
+        exit; // Menghentikan eksekusi kode selanjutnya
     } catch (PDOException $e) {
-        echo "Error occurred: " . $e->getMessage();
-        exit;
+        echo "Error occurred: " . $e->getMessage(); // Menampilkan pesan kesalahan jika terjadi exception
+        exit; // Menghentikan eksekusi kode selanjutnya
     }
 }

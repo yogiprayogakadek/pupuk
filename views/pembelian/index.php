@@ -4,24 +4,25 @@ session_start();
 $pageTitle = 'Pembelian';
 $pageSub = 'Data';
 
-$db = databaseConnection();
+$db = databaseConnection(); // Membuat koneksi ke database
 
-// data produk
+// Query untuk mengambil data produk yang jumlah_produk_kg-nya lebih dari 0
 $query = "SELECT * FROM produk WHERE jumlah_produk_kg > 0";
 $stmt = $db->query($query);
-$results = $stmt->fetchAll();
+$results = $stmt->fetchAll(); // Mengambil hasil query sebagai array
 
-// data keranjang
+// Query untuk mengambil data keranjang pembelian yang belum selesai
 $query2 = "SELECT a.id, a.kuantitas, c.nama_produk, c.harga_produk, c.gambar_produk, b.id as id_transaksi, c.jumlah_produk_kg
             FROM detail_transaksi a
             JOIN transaksi b ON a.id_transaksi=b.id
             JOIN produk c ON c.id=a.id_produk
             WHERE b.id_pengguna = " . $_SESSION['id_pengguna'] . " AND b.is_done = 0";
 $prep = $db->query($query2);
-$data = $prep->fetchAll();
+$data = $prep->fetchAll(); // Mengambil hasil query sebagai array
 
-ob_start();
+ob_start(); // Memulai penampungan output
 ?>
+
 
 <!-- Modal -->
 <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modalTitleId" aria-hidden="true">
@@ -186,16 +187,21 @@ require_once('../../templates/master.php');
 
 <script>
     $(document).ready(function() {
+        // Kode di dalam blok ini akan dieksekusi ketika halaman selesai dimuat
+
         $('body').on('click', '.btn-cart', function() {
-            $('#modal').modal('show')
+            // Ketika tombol dengan class "btn-cart" diklik
+
+            $('#modal').modal('show');
+            // Menampilkan modal dengan id "modal"
 
             let cat = $(this).data('cat');
-            // set max weigth each item
+            // Mengambil data kategori dari tombol yang diklik
             localStorage.setItem('maxWeight', parseInt($(this).data('max')));
             localStorage.setItem('category', cat);
 
-            $('#form').trigger('reset')
-            $('.invalid-feedback').html('')
+            $('#form').trigger('reset');
+            $('.invalid-feedback').html('');
             $('.kuantitas').removeClass('is-invalid');
 
             $('#modal .modal-body').find('.id-detail').remove();
@@ -203,21 +209,19 @@ require_once('../../templates/master.php');
             if (cat == 'addCart') {
                 var input = '<input type="hidden" class="form-control id-produk" name="id_produk">';
                 $('#modal .modal-body').append(input);
-                $('.id-produk').val($(this).data('id'))
+                $('.id-produk').val($(this).data('id'));
             } else {
                 var id_detail = $(this).data('id');
-                // var kuantitas = $(this).data('kuantitas');
                 var input = '<input type="hidden" class="form-control id-detail" id="id-detail" name="id_detail_transaksi" value=' + id_detail + '>';
 
                 $('#modal .modal-body').append(input);
-                // $('#modal .kuantitas').val(kuantitas)
-
-                // $('.btn-save').prop('disabled', false)
             }
-
-        })
+            // Menambahkan input hidden dengan class "id-produk" atau "id-detail" ke dalam modal tergantung pada kategori yang dipilih
+        });
 
         $('body').on('keyup', '.kuantitas', function() {
+            // Ketika input dengan class "kuantitas" diubah
+
             var value = $(this).val();
             var maxWeight = localStorage.getItem('maxWeight');
 
@@ -234,14 +238,19 @@ require_once('../../templates/master.php');
                 $('.error-kuantitas').html('');
                 $('.btn-save').prop('disabled', false);
             }
+            // Validasi input kuantitas, memeriksa jika angka tidak valid atau melebihi stok yang tersedia
         });
 
         $('body').on('click', '.btn-save', function(event) {
+            // Ketika tombol dengan class "btn-save" di klik
+
             $('.invalid-feedback').empty();
             $('.form-control').removeClass('is-invalid');
 
             var isValid = true;
             $('#modal .form-control').each(function() {
+                // Melakukan iterasi pada setiap elemen dengan class "form-control" di dalam modal
+
                 var $input = $(this);
                 var inputName = $input.attr('name');
                 var inputValue = $input.val().trim();
@@ -261,9 +270,11 @@ require_once('../../templates/master.php');
 
             if (isValid) {
                 $('.form-control').removeClass('is-invalid');
+                // Jika validasi berhasil, hapus kelas "is-invalid" dari elemen input
+
                 let form = $("#form")[0];
                 let data = new FormData(form);
-                data.append('category', localStorage.getItem('category'))
+                data.append('category', localStorage.getItem('category'));
                 $.ajax({
                     type: "POST",
                     url: 'process.php',
@@ -274,14 +285,14 @@ require_once('../../templates/master.php');
                     dataType: "json",
                     success: function(response) {
                         Swal.fire(response.title, response.message, response.status);
-                        $('#modal').modal('hide')
+                        $('#modal').modal('hide');
                         $("#form").trigger("reset");
 
                         if (response.status == 'success') {
                             localStorage.clear();
                             setTimeout(() => {
-                                location.reload()
-                            }, 1500)
+                                location.reload();
+                            }, 1500);
                         }
                     },
                     error: function(error) {
@@ -289,9 +300,11 @@ require_once('../../templates/master.php');
                     },
                 });
             }
-        })
+        });
 
         $('body').on('click', '.btn-delete', function() {
+            // Ketika tombol dengan class "btn-delete" di klik
+
             Swal.fire({
                 title: 'Anda yakin?',
                 text: "Hapus produk ini dari keranjang!",
@@ -314,15 +327,17 @@ require_once('../../templates/master.php');
                         success: function(response) {
                             Swal.fire(response.title, response.message, response.status);
                             setTimeout(() => {
-                                location.reload()
-                            }, 1500)
+                                location.reload();
+                            }, 1500);
                         }
                     });
                 }
-            })
+            });
         });
 
         $('body').on('click', '.btn-proses', function() {
+            // Ketika tombol dengan class "btn-proses" di klik
+
             Swal.fire({
                 title: 'Anda yakin?',
                 text: "Proses belanjaan ini!",
@@ -344,15 +359,17 @@ require_once('../../templates/master.php');
                         success: function(response) {
                             Swal.fire(response.title, response.message, response.status);
                             setTimeout(() => {
-                                location.reload()
-                            }, 1500)
+                                location.reload();
+                            }, 1500);
                         }
                     });
                 }
-            })
+            });
         });
 
         $('body').on('keyup', '.search', function() {
+            // Ketika input dengan class "search" diubah
+
             var search = $(this).val();
             $("#tableProduct tbody").empty();
             $.ajax({

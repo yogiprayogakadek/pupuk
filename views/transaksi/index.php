@@ -5,24 +5,26 @@ $pageSub = 'Data';
 
 session_start();
 $db = databaseConnection();
-$role = $_SESSION['role'];
+$role = $_SESSION['role']; // Mengambil nilai 'role' dari sesi saat ini
 
-if ($role == 0) {
-    $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $_SESSION['id_pengguna'];
+if ($role == 0) { // Jika 'role' adalah 0
+    $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $_SESSION['id_pengguna']; // Membuat query untuk mengambil transaksi yang selesai untuk pengguna dengan ID tertentu
 } else {
-    $query = "SELECT b.nama_lengkap, a.id, a.total, a.tanggal_transaksi
+    $query = "SELECT c.nama_lengkap, a.id, a.total, a.tanggal_transaksi
                 FROM transaksi a
                 JOIN pengguna b
-                ON a.id_pengguna=b.id WHERE a.is_done = 1";
-    // ON a.id_pengguna=b.id WHERE is_done = 1";
+                ON a.id_pengguna=b.id
+                JOIN petani c 
+                ON c.id_pengguna = b.id
+                WHERE a.is_done = 1"; // Membuat query untuk mengambil transaksi yang selesai bersama dengan informasi petani terkait
 }
 
-$stmt = $db->query($query);
-$results = $stmt->fetchAll();
+$stmt = $db->query($query); // Menjalankan query
+$results = $stmt->fetchAll(); // Mengambil hasil query sebagai array
 
-
-ob_start();
+ob_start(); // Memulai penampungan output
 ?>
+
 <!-- Modal -->
 <div class="modal fade" id="modal" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
@@ -117,52 +119,6 @@ ob_start();
 </div>
 
 
-<!-- <table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>No</th>
-            <th>Tanggal Transaksi</th>
-            <th colspan="5">Detail Transaksi</th>
-            <th>Total</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr>
-            <td>1</td>
-            <td>23-06-2023</td>
-            <td colspan="5">
-                <table width="100%">
-                    <thead>
-                        <th>#</th>
-                        <th>Nama Produk</th>
-                        <th>Harga Produk</th>
-                        <th>Kuantitas</th>
-                        <th>Subtotal</th>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Pupuk Urea</td>
-                            <td>10.000</td>
-                            <td>1</td>
-                            <td>10.000</td>
-                        </tr>
-                        <tr>
-                            <td>1</td>
-                            <td>Pupuk Urea</td>
-                            <td>10.000</td>
-                            <td>1</td>
-                            <td>10.000</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </td>
-            <td>50.000</td>
-        </tr>
-    </tbody>
-</table> -->
-
-
 <?php
 $content = ob_get_clean();
 require_once('../../templates/master.php');
@@ -171,11 +127,16 @@ require_once('../../templates/master.php');
 <script>
     $(document).ready(function() {
         $('body').on('click', '.btn-modal', function() {
-            $('#modal').modal('show')
-            let id = $(this).data('id')
-            $('#table tbody').empty();
+            // Ketika tombol dengan class "btn-modal" di klik
 
-            var grandTotal = 0;
+            $('#modal').modal('show'); // Menampilkan modal dengan id "modal"
+
+            let id = $(this).data('id'); // Mengambil data id dari tombol yang diklik
+
+            $('#table tbody').empty(); // Mengosongkan isi tabel dengan id "table" pada bagian body
+
+            var grandTotal = 0; // Variabel untuk menyimpan total harga
+
             $.ajax({
                 type: "POST",
                 url: "process.php",
@@ -185,7 +146,11 @@ require_once('../../templates/master.php');
                 },
                 dataType: "json",
                 success: function(data) {
+                    // AJAX request berhasil, menerima data JSON dari "process.php"
+
                     $.each(data, function(index, value) {
+                        // Melakukan iterasi pada setiap data dalam array "data"
+
                         var tr_list = '<tr>' +
                             '<td>' + (index + 1) + '</td>' +
                             '<td>' + value.nama_produk + '</td>' +
@@ -197,19 +162,26 @@ require_once('../../templates/master.php');
                                 minimumFractionDigits: 0
                             }) + '</td>' +
                             '</tr>';
-                        $('#table tbody').append(tr_list);
+                        // Membuat baris tabel berdasarkan data yang diterima
+
+                        $('#table tbody').append(tr_list); // Menambahkan baris tabel ke dalam tbody pada tabel dengan id "table"
                     });
 
                     $('#table tbody tr').each(function(key) {
+                        // Melakukan iterasi pada setiap baris dalam tbody tabel dengan id "table"
+
                         var subtotal = (parseFloat($(this).find('td:nth-child(5)').text().replace(/[^0-9]+/g, '')));
-                        grandTotal += subtotal;
+                        // Mengambil subtotal dari kolom kelima pada baris saat ini
+
+                        grandTotal += subtotal; // Menambahkan subtotal ke grandTotal
                     });
 
                     $('#total').text('Rp' + grandTotal.toLocaleString('id-ID', {
                         minimumFractionDigits: 0
                     }));
+                    // Menampilkan grandTotal pada elemen dengan id "total"
                 }
             });
-        })
+        });
     });
 </script>

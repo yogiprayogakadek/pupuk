@@ -3,12 +3,12 @@ require_once('../../config/config.php');
 $pageTitle = 'Produk';
 $pageSub = 'Data';
 
-$db = databaseConnection();
-$query = "SELECT * FROM produk";
-$stmt = $db->query($query);
-$results = $stmt->fetchAll();
+$db = databaseConnection(); // Membuat koneksi ke database
+$query = "SELECT * FROM produk"; // Membuat query untuk mengambil semua data produk
+$stmt = $db->query($query); // Menjalankan query
+$results = $stmt->fetchAll(); // Mengambil hasil query sebagai array
 
-ob_start();
+ob_start(); // Memulai penampungan output
 ?>
 
 <!-- Modal -->
@@ -117,21 +117,30 @@ require_once('../../templates/master.php');
 
 <script>
     $(document).ready(function() {
-        $('body').on('click', '.btn-modal', function() {
-            $('#modal').modal('show')
+        // Kode di dalam blok ini akan dieksekusi ketika halaman selesai dimuat
 
-            let cat = $(this).data('cat')
-            let id = $(this).data('id')
+        $('body').on('click', '.btn-modal', function() {
+            // Ketika tombol dengan class "btn-modal" di klik
+
+            $('#modal').modal('show');
+            // Menampilkan modal dengan id "modal"
+
+            let cat = $(this).data('cat');
+            let id = $(this).data('id');
+            // Mengambil data kategori dan id dari tombol yang diklik
 
             var formCat = '<input type="hidden" class="form-control category" name="category" id="category">';
             $('.category').remove();
-            $('.container-fluid').append(formCat)
+            $('.container-fluid').append(formCat);
             $('.category').val(cat);
+            // Menambahkan input hidden dengan class "category" ke dalam container dan mengisi nilainya dengan kategori
+
             if (cat == 'edit') {
                 $('.id-produk').remove();
                 var idProduk = '<input type="hidden" class="form-control id-produk" name="id" id="id">';
-                $('.container-fluid').append(idProduk)
+                $('.container-fluid').append(idProduk);
                 $('.id-produk').val(id);
+                // Jika kategori adalah 'edit', tambahkan input hidden dengan class "id-produk" dan mengisi nilainya dengan id produk
 
                 $.ajax({
                     type: "POST",
@@ -141,21 +150,25 @@ require_once('../../templates/master.php');
                         category: 'getData'
                     },
                     dataType: "json",
-                    success: function (response) {
-                        $('.nama').val(response.nama_produk)
-                        $('.url').val(response.gambar_produk)
-                        $('.jumlah').val(response.jumlah_produk_kg)
-                        $('.harga').val(response.harga_produk)
+                    success: function(response) {
+                        // AJAX request berhasil, menerima data JSON dari "process.php"
+
+                        $('.nama').val(response.nama_produk);
+                        $('.url').val(response.gambar_produk);
+                        $('.jumlah').val(response.jumlah_produk_kg);
+                        $('.harga').val(response.harga_produk);
+                        // Mengisi nilai pada elemen-elemen input dengan data yang diterima
                     }
                 });
             } else {
                 $("#form").trigger("reset");
                 $('.id-produk').remove();
+                // Jika kategori bukan 'edit', reset form dan hapus input hidden dengan class "id-produk"
             }
-        })
+        });
 
         $('body').on('click', '.btn-save', function(event) {
-            // event.preventDefault();
+            // Ketika tombol dengan class "btn-save" di klik
 
             $('.invalid-feedback').empty();
             $('.form-control').removeClass('is-invalid');
@@ -163,6 +176,8 @@ require_once('../../templates/master.php');
             var isValid = true;
 
             $('#modal .form-control').each(function() {
+                // Melakukan iterasi pada setiap elemen dengan class "form-control" di dalam modal
+
                 var $input = $(this);
                 var inputName = $input.attr('name');
                 var inputValue = $input.val().trim();
@@ -178,10 +193,13 @@ require_once('../../templates/master.php');
                         $('.error-' + inputName).text('Field harus berisi angka.');
                     }
                 }
+                // Memvalidasi setiap elemen input, memeriksa jika kosong atau tidak berisi angka
             });
 
             if (isValid) {
                 $('.form-control').removeClass('is-invalid');
+                // Jika validasi berhasil, hapus kelas "is-invalid" dari elemen input
+
                 let form = $("#form")[0];
                 let data = new FormData(form);
                 $.ajax({
@@ -193,21 +211,25 @@ require_once('../../templates/master.php');
                     cache: false,
                     success: function(response) {
                         $("#form").trigger("reset");
-                        $('#modal').modal('hide')
+                        $('#modal').modal('hide');
+                        // Reset form dan sembunyikan modal
 
                         Swal.fire(response.title, response.message, response.status);
                         setTimeout(() => {
-                            location.reload()
-                        }, 1500)
+                            location.reload();
+                        }, 1500);
+                        // Tampilkan pesan sukses menggunakan Swal (SweetAlert) dan refresh halaman setelah 1,5 detik
                     },
                     error: function(error) {
-                        // 
+                        // Tangani kesalahan jika terjadi
                     },
                 });
             }
         });
 
         $('body').on('click', '.btn-delete', function() {
+            // Ketika tombol dengan class "btn-delete" di klik
+
             Swal.fire({
                 title: 'Anda yakin?',
                 text: "Hapus produk ini!",
@@ -229,8 +251,9 @@ require_once('../../templates/master.php');
                         success: function(response) {
                             Swal.fire(response.title, response.message, response.status);
                             setTimeout(() => {
-                                location.reload()
-                            }, 1500)
+                                location.reload();
+                            }, 1500);
+                            // Tampilkan pesan konfirmasi menggunakan Swal (SweetAlert) dan refresh halaman setelah 1,5 detik
                         }
                     });
                 }

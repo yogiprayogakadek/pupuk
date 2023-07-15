@@ -1,48 +1,41 @@
 <?php
     session_start();
 
+    // import config file
     require_once('../config/config.php');
 
-    $db = databaseConnection();
+    $db = databaseConnection(); // Membuat koneksi ke database
 
     if($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $username = $_POST['username'];
-        $password = $_POST['password'];
+        $username = $_POST['username']; // Mengambil nilai 'username' dari input POST
+        $password = $_POST['password']; // Mengambil nilai 'password' dari input POST
 
-        $stmt = $db->prepare("SELECT * FROM pengguna WHERE username = :username");
+        $stmt = $db->prepare("SELECT * FROM pengguna WHERE username = :username"); // Menyiapkan query untuk memeriksa pengguna berdasarkan 'username'
+        $stmt->bindParam(':username', $username); // Mengikat parameter ':username' dengan nilai 'username'
+        $stmt->execute(); // Menjalankan query
 
-        $stmt->bindParam(':username', $username);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
 
-        $stmt->execute();
+        if($user && password_verify($password, $user['kata_sandi'])) { // Memeriksa apakah pengguna ada dan password yang diberikan cocok dengan password di database
+            $_SESSION['username'] = $username; // Menyimpan 'username' dalam session
+            $_SESSION['id_pengguna'] = $user['id']; // Menyimpan 'id_pengguna' dalam session
+            $_SESSION['role'] = $user['role']; // Menyimpan 'role' dalam session
 
-        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $table = ($_SESSION['role'] == 1) ? 'admin' : 'petani'; // Menentukan tabel yang akan digunakan berdasarkan 'role' pengguna
 
-        if($user && password_verify($password, $user['kata_sandi'])) {
-            $_SESSION['username'] = $username;
-            $_SESSION['id_pengguna'] = $user['id'];
-            $_SESSION['role'] = $user['role'];
+            $query = $db->prepare("SELECT * FROM $table WHERE id_pengguna = :id_pengguna"); // Menyiapkan query untuk memilih data dari tabel yang sesuai dengan 'role' pengguna
+            $query->bindParam(':id_pengguna', $user['id']); // Mengikat parameter ':id_pengguna' dengan nilai 'id_pengguna'
+            $query->execute(); // Menjalankan query
+            $_SESSION['nama_lengkap'] = $user['nama_lengkap']; // Menyimpan 'nama_lengkap' dalam session
 
-            $table = ($_SESSION['role'] == 1) ? 'admin' : 'petani';
-
-            $query = $db->prepare("SELECT * FROM $table WHERE id_pengguna = :id_pengguna");
-            // if($user['role'] == 1) {
-            //     $query = $db->prepare("SELECT * FROM admin WHERE id_pengguna = :id_pengguna");
-            // } else {
-            //     $query = $db->prepare("SELECT * FROM petani WHERE id_pengguna = :id_pengguna");
-            // }
-            $query->bindParam(':id_pengguna', $user['id']);
-            $query->execute();
-            $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
-
-            header('Location: ' . $baseUrl);
-            // header('Location: ' . $baseUrl . '/' . 'index.php');
+            header('Location: ' . $baseUrl); // Mengalihkan pengguna ke halaman beranda setelah berhasil login
             exit;
         } else {
-            $_SESSION['error'] = 'Pengguna tidak ada, mohon periksa username dan kata sandi anda';
-            header('Location:' . $baseUrl . '/auth/login.php');
+            $_SESSION['error'] = 'Pengguna tidak ada, mohon periksa username dan kata sandi anda'; // Menyimpan pesan error dalam session
+            header('Location:' . $baseUrl . '/auth/login.php'); // Mengalihkan pengguna ke halaman login dengan pesan error
             exit;
         }
     }
 
-    $error = isset($_SESSION['error']) ? $_SESSION['error'] : '';
-    unset($_SESSION['error']);
+    $error = isset($_SESSION['error']) ? $_SESSION['error'] : ''; // Mengambil pesan error dari session (jika ada)
+    unset($_SESSION['error']); // Menghapus pesan error dari session

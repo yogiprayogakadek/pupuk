@@ -5,29 +5,26 @@ require_once('../../config/config.php');
 
 use Dompdf\Dompdf;
 
-// Database connection
 $db = databaseConnection();
 
-// assign session in new variable
-$id_pengguna = $_SESSION['id_pengguna'];
-$role = $_SESSION['role'];
+$id_pengguna = $_SESSION['id_pengguna']; // Mengambil nilai 'id_pengguna' dari sesi saat ini
+$role = $_SESSION['role']; // Mengambil nilai 'role' dari sesi saat ini
 
-if ($role == 1) {
-    // query for get all data transaksi (this is for admin)
-    $colspan = 5;
+if ($role == 1) { // Jika 'role' adalah 1
+    $colspan = 5; // Mengatur nilai 'colspan' menjadi 5
     $query = "SELECT a.*, b.username
                 FROM transaksi a
                 JOIN pengguna b
                 ON a.id_pengguna=b.id
-                WHERE is_done = 1";
+                WHERE is_done = 1"; // Membuat query untuk mengambil transaksi yang selesai bersama dengan informasi pengguna terkait
 } else {
-    // query for get data for each customer (using id pengguna as unique or parameter)
-    $colspan = 4;
-    $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $id_pengguna;
+    $colspan = 4; // Mengatur nilai 'colspan' menjadi 4
+    $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $id_pengguna; // Membuat query untuk mengambil transaksi yang selesai untuk pengguna dengan ID tertentu
 }
 
-$stmt = $db->query($query);
-$results = $stmt->fetchAll();
+$stmt = $db->query($query); // Menjalankan query
+$results = $stmt->fetchAll(); // Mengambil hasil query sebagai array
+
 
 // HTML content for generating the PDF
 $html = '
@@ -179,9 +176,9 @@ foreach ($results as $key => $result) {
                     foreach($col as $index => $row) {
                         $html .='<tr>
                             <td>'. $row['nama_produk'] .'</td>
-                            <td>'. number_format($row['harga_produk'], 0,".",'.') .'</td>
-                            <td>'. $row['kuantitas'] .'</td>
-                            <td>'. number_format(($row['kuantitas'] * $row['harga_produk']), 0,".",'.') .'</td>
+                            <td>Rp'. number_format($row['harga_produk'], 0,".",'.') .'</td>
+                            <td>'. $row['kuantitas'] .'kg</td>
+                            <td>Rp'. number_format(($row['kuantitas'] * $row['harga_produk']), 0,".",'.') .'</td>
                         </tr>';
                     }   
                     $html .= '</tbody>
@@ -215,4 +212,3 @@ $dompdf->render();
 
 // Output the generated PDF to the browser
 $dompdf->stream('transaction_report.pdf', ['Attachment' => true]);
-?>
