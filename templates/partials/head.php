@@ -12,7 +12,7 @@ x
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <!-- CSRF Token -->
     <meta name="csrf-token" content="aGL9mgKAjitF0e3BQVfxLGjyunp6mtfBGqik1DZZ" />
-    <title>SI Retensi Online | RSUD TABANAN</title>
+    <title>Subak Desa Bongan</title>
     <link href="https://fonts.googleapis.com/css?family=Nunito:300,400,400i,600,700,800,900" rel="stylesheet" />
 
     <link id="gull-theme" rel="stylesheet" href="templates/assets/styles/css/themes/lite-purple.min.css" />

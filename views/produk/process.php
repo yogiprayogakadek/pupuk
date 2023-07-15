@@ -11,6 +11,7 @@ $response = array();
 
 if ($category == 'tambah' || $category == 'edit') {
     try {
+        // get request data form
         $nama = $_POST['nama'];
         $url = $_POST['url'];
         $jumlah = $_POST['jumlah'];
@@ -18,8 +19,10 @@ if ($category == 'tambah' || $category == 'edit') {
 
 
         if ($category == 'tambah') {
+            // insert new data when category (request is tambah)
             $stmt = $db->prepare("INSERT INTO produk (nama_produk, gambar_produk, jumlah_produk_kg, harga_produk) VALUES (:nama, :gambar, :jumlah, :harga) ");
         } elseif ($category == 'edit') {
+            // update existing data when category is edit and the id are match in the database table
             $stmt = $db->prepare("UPDATE produk SET nama_produk = :nama, gambar_produk = :gambar, jumlah_produk_kg = :jumlah, harga_produk = :harga WHERE id = :id");
 
             $id = $_POST['id'];
@@ -57,6 +60,7 @@ if ($category == 'tambah' || $category == 'edit') {
     // Return the JSON response
     echo json_encode($response);
 } elseif($category == 'getData') {
+    // get data in database
     $id = $_POST['id'];
     $stmt = $db->prepare("SELECT * FROM produk WHERE id = :id ");
     $stmt->bindParam(':id', $id);
@@ -76,6 +80,7 @@ if ($category == 'tambah' || $category == 'edit') {
         echo json_encode(array('message' => 'Data not found'));
     }
 } elseif($category == 'delete') {
+    // delete data which match with selected id
     $id = $_POST['id'];
     $stmt = $db->prepare("DELETE FROM produk WHERE id = :id ");
     $stmt->bindParam(':id', $id);

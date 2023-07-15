@@ -19,9 +19,20 @@
 
         if($user && password_verify($password, $user['kata_sandi'])) {
             $_SESSION['username'] = $username;
-            $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
             $_SESSION['id_pengguna'] = $user['id'];
             $_SESSION['role'] = $user['role'];
+
+            $table = ($_SESSION['role'] == 1) ? 'admin' : 'petani';
+
+            $query = $db->prepare("SELECT * FROM $table WHERE id_pengguna = :id_pengguna");
+            // if($user['role'] == 1) {
+            //     $query = $db->prepare("SELECT * FROM admin WHERE id_pengguna = :id_pengguna");
+            // } else {
+            //     $query = $db->prepare("SELECT * FROM petani WHERE id_pengguna = :id_pengguna");
+            // }
+            $query->bindParam(':id_pengguna', $user['id']);
+            $query->execute();
+            $_SESSION['nama_lengkap'] = $user['nama_lengkap'];
 
             header('Location: ' . $baseUrl);
             // header('Location: ' . $baseUrl . '/' . 'index.php');

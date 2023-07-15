@@ -8,10 +8,12 @@ use Dompdf\Dompdf;
 // Database connection
 $db = databaseConnection();
 
+// assign session in new variable
 $id_pengguna = $_SESSION['id_pengguna'];
 $role = $_SESSION['role'];
 
 if ($role == 1) {
+    // query for get all data transaksi (this is for admin)
     $colspan = 5;
     $query = "SELECT a.*, b.username
                 FROM transaksi a
@@ -19,6 +21,7 @@ if ($role == 1) {
                 ON a.id_pengguna=b.id
                 WHERE is_done = 1";
 } else {
+    // query for get data for each customer (using id pengguna as unique or parameter)
     $colspan = 4;
     $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $id_pengguna;
 }

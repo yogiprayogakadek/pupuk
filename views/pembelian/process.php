@@ -13,6 +13,7 @@ $response = array();
 
 if ($category == 'addCart') {
     try {
+        // assign the request form data to new variable
         $id_produk = $_POST['id_produk'];
         $kuantitas = $_POST['kuantitas'];
         $is_done = false;
@@ -26,6 +27,7 @@ if ($category == 'addCart') {
         $check->execute();
         $dataCheck = $check->fetch(PDO::FETCH_ASSOC);
         if ($check->rowCount() == 0) {
+            // if data in transaction which id_done is false, then insert a new transaksi and make a detail transaction
             $stmt = $db->prepare("INSERT INTO transaksi (id_pengguna, tanggal_transaksi, total, is_done) VALUES (:id_pengguna, :tanggal_transaksi, :total, :is_done) ");
             $stmt->bindParam(':tanggal_transaksi', $tanggal_transaksi);
             $stmt->bindParam(':total', $total);
@@ -35,6 +37,7 @@ if ($category == 'addCart') {
 
             $lastInsertedId = $db->lastInsertId();
             if ($stmt->rowCount() > 0) {
+                // this line for insert product detail into detail transaction table
                 $detail = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) ");
                 $detail->bindParam(':id_transaksi', $lastInsertedId);
                 $detail->bindParam(':id_produk', $id_produk);
@@ -54,6 +57,7 @@ if ($category == 'addCart') {
                 }
             }
         } else {
+            // this line mean when is_done is true then will insert in detail transaction only (doesn't need to insert a new data in transaction)
             // check id produk in detail transaksi
             $det = $db->prepare("SELECT * FROM detail_transaksi WHERE id_produk = :id_produk AND id_transaksi = :id_transaksi");
             $det->bindParam(':id_transaksi', $dataCheck['id']);
@@ -94,6 +98,7 @@ if ($category == 'addCart') {
     // Return the JSON response
     echo json_encode($response);
 } elseif ($category == 'delete') {
+    // assign form data request to new variable
     $id = $_POST['id'];
     $id_transaksi = $_POST['id_transaksi'];
 
@@ -115,15 +120,18 @@ if ($category == 'addCart') {
     $stmt->execute();
 
     // Check if the operation was successful
-    if ($stmt->rowCount() > 0) {
-        $response['status'] = 'success';
+    $response['status'] = 'success';
         $response['message'] = 'Data berhasil dihapus';
         $response['title'] = 'Berhasil';
-    } else {
-        $response['status'] = 'error';
-        $response['message'] = 'Tidak ada perubahan data';
-        $response['title'] = 'Gagal';
-    }
+    // if ($stmt->rowCount() > 0) {
+    //     $response['status'] = 'success';
+    //     $response['message'] = 'Data berhasil dihapus';
+    //     $response['title'] = 'Berhasil';
+    // } else {
+    //     $response['status'] = 'error';
+    //     $response['message'] = 'Tidak ada perubahan data';
+    //     $response['title'] = 'Gagal';
+    // }
 
     // Set the appropriate response headers
     header('Content-Type: application/json');
@@ -185,10 +193,13 @@ if ($category == 'addCart') {
     }
 } elseif ($category == 'searchProduct') {
     try {
+        // assign form request to new variable
         $keyword = $_POST['keyword'];
         if ($keyword == '') {
+            // if the request are === '' will return all the data
             $stmt = $db->prepare("SELECT * FROM produk WHERE jumlah_produk_kg > 0 ");
         } else {
+            // return the data is match with the request
             $stmt = $db->prepare("SELECT * FROM produk WHERE nama_produk LIKE CONCAT('%', :keyword, '%') AND jumlah_produk_kg > 0");
             $stmt->bindParam(':keyword', $keyword);
         }
@@ -215,9 +226,11 @@ if ($category == 'addCart') {
     }
 } elseif ($category == 'updateCart') {
     try {
+        // assign form request to new variable
         $kuantitas = $_POST['kuantitas'];
         $id_detail_transaksi = $_POST['id_detail_transaksi'];
 
+        // update data in cart
         $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id");
         $stmt->bindParam(':id', $id_detail_transaksi);
         $stmt->bindParam(':kuantitas', $kuantitas);

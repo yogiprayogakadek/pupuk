@@ -10,6 +10,7 @@ $category = $_POST['category'];
 $response = array();
 
 if($category == 'getData') {
+    // get data which match with selected id in table transaksi
     $id = $_POST['id'];
     $stmt = $db->prepare("SELECT b.harga_produk, b.nama_produk, a.kuantitas
                             FROM detail_transaksi a

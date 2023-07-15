@@ -4,7 +4,12 @@ $pageTitle = 'Petani';
 $pageSub = 'Data';
 
 $db = databaseConnection();
-$query = "SELECT * FROM pengguna WHERE role = 0";
+// $query = "SELECT * FROM pengguna WHERE role = 0";
+$query = "SELECT a.username, b.nama_lengkap, b.alamat, a.id as id_pengguna
+            FROM pengguna a
+            JOIN petani b
+            ON a.id = b.id_pengguna
+            WHERE a.role = 0";
 $stmt = $db->query($query);
 $results = $stmt->fetchAll();
 
@@ -33,6 +38,11 @@ ob_start();
                             <label for="username">Username</label>
                             <input type="text" class="form-control username" name="username" id="username" placeholder="masukkan username">
                             <div class="invalid-feedback error-username"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="alamat">Alamat</label>
+                            <input type="text" class="form-control alamat" name="alamat" id="alamat" placeholder="masukkan alamat">
+                            <div class="invalid-feedback error-alamat"></div>
                         </div>
                     </div>
                 </div>
@@ -70,8 +80,7 @@ ob_start();
                             <th>No</th>
                             <th>Nama Lengkap</th>
                             <th>Username</th>
-                            <!-- <th>Jumlah (kg)</th>
-                            <th>Harga (kg)</th> -->
+                            <th>Alamat</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -81,11 +90,12 @@ ob_start();
                                 <td><?= ($key + 1); ?></td>
                                 <td><?= $value['nama_lengkap']; ?></td>
                                 <td><?= $value['username']; ?></td>
+                                <td><?= $value['alamat']; ?></td>
                                 <td>
-                                    <button class="btn btn-modal btn-default" data-id="<?= $value['id']; ?>" data-cat='edit'>
+                                    <button class="btn btn-modal btn-default" data-id="<?= $value['id_pengguna']; ?>" data-cat='edit'>
                                         <i class="fa fa-pencil text-success mr-2 pointer"></i>
                                     </button>
-                                    <button class="btn btn-delete btn-danger" data-id="<?= $value['id']; ?>">
+                                    <button class="btn btn-delete btn-danger" data-id="<?= $value['id_pengguna']; ?>">
                                         <i class="fa fa-trash text-white mr-2 pointer"></i>
                                     </button>
                                 </td>
@@ -134,6 +144,7 @@ require_once('../../templates/master.php');
                     success: function (response) {
                         $('.nama').val(response.nama_lengkap)
                         $('.username').val(response.username)
+                        $('.alamat').val(response.alamat)
                     }
                 });
             } else {
