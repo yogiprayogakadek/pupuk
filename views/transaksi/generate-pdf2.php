@@ -12,27 +12,19 @@ $role = $_SESSION['role']; // Mengambil nilai 'role' dari sesi saat ini
 
 if ($role == 1) { // Jika 'role' adalah 1
     $colspan = 5; // Mengatur nilai 'colspan' menjadi 5
-    $query = "SELECT a.*, b.username,
-                    (SELECT SUM((p.harga_produk - p.harga_produk_asli) * dt.kuantitas)
-                    FROM detail_transaksi dt
-                    JOIN produk p ON dt.id_produk = p.id
-                    WHERE dt.id_transaksi = a.id) AS keuntungan
+    $query = "SELECT a.*, b.username
                 FROM transaksi a
-                JOIN pengguna b ON a.id_pengguna = b.id
+                JOIN pengguna b
+                ON a.id_pengguna=b.id
                 WHERE is_done = 1"; // Membuat query untuk mengambil transaksi yang selesai bersama dengan informasi pengguna terkait
 } else {
     $colspan = 4; // Mengatur nilai 'colspan' menjadi 4
-    $query = "SELECT a.*, 
-                    (SELECT SUM((p.harga_produk - p.harga_produk_asli) * dt.kuantitas)
-                    FROM detail_transaksi dt
-                    JOIN produk p ON dt.id_produk = p.id
-                    WHERE dt.id_transaksi = a.id) AS keuntungan
-                FROM transaksi a
-                WHERE is_done = 1 AND id_pengguna = " . $id_pengguna; // Membuat query untuk mengambil transaksi yang selesai untuk pengguna dengan ID tertentu
+    $query = "SELECT * FROM transaksi WHERE is_done = 1 AND id_pengguna = " . $id_pengguna; // Membuat query untuk mengambil transaksi yang selesai untuk pengguna dengan ID tertentu
 }
 
 $stmt = $db->query($query); // Menjalankan query
 $results = $stmt->fetchAll(); // Mengambil hasil query sebagai array
+
 
 // HTML content for generating the PDF
 $html = '
@@ -135,6 +127,7 @@ $html = '
 
         .transaction-table .text-right {
             text-align: right;
+            font-weight: bold;
         }
 
         .grand-total {
@@ -143,11 +136,10 @@ $html = '
     </style>
 </head>
 <body>
-<div class="header">
-<h1>Laporan Transaksi</h1>
-<h5>Dicetak oleh: ' . $_SESSION['username'] . '</h5>
-</div>
-
+    <div class="header">
+        <h1>Laporan Transaksi</h1>
+        <h5>Dicetak oleh: ' . $_SESSION['username'] . '</h5>
+    </div>
     <table class="transaction-table">
     <thead>
         <tr>
@@ -170,7 +162,6 @@ $html = '
     $totalKeuntungan = 0;
 foreach ($results as $key => $result) {
     $grantotal += $result['total'];
-    $totalKeuntungan += $result['keuntungan'];
     $html .= '<tr>
             <td>' . ($key+1) .'</td>';
             if ($role == 1) {
@@ -188,9 +179,10 @@ foreach ($results as $key => $result) {
                     $dt = $db->query($q);
                     $col = $dt->fetchAll();
                     foreach($col as $index => $row) {
+                        $totalKeuntungan += $row['keuntungan'];
                         $html .='<tr>
                             <td>'. $row['nama_produk'] .'</td>
-                            <td class="text-right">Rp'. number_format($row['harga_produk'], 0,".",'.') .'</td>
+                            <td>Rp'. number_format($row['harga_produk'], 0,".",'.') .'</td>
                             <td>'. $row['kuantitas'] .'kg</td>
                             <td class="text-right">Rp'. number_format(($row['kuantitas'] * $row['harga_produk']), 0,".",'.') .'</td>
                         </tr>';
@@ -198,9 +190,9 @@ foreach ($results as $key => $result) {
                     $html .= '</tbody>
                 </table>
             </td>
-            <td class="text-right">' . number_format($result['total'], 0,".",'.') .'</td>';
+            <td>' . number_format($result['total'], 0,".",'.') .'</td>';
             if ($role == 1) {
-                $html .= '<td class="text-right">Rp'. number_format($result['keuntungan'], 0,".",'.') .'</td>';
+                $html .= '<td class="text-right">'. $row['keuntungan'] .'</td>';
             }
         $html .= '</tr>';
 }
@@ -212,9 +204,9 @@ $html .= '</tbody>
         <td class="text-center" colspan="4">Grandtotal</td>
         <td class="text-right" colspan="'.$colspan.'">Rp'.number_format($grantotal, 0,".",'.').'</td>';
         if ($role == 1) {
-            $html .= '<td class="text-right">Rp'.number_format($totalKeuntungan, 0,".",'.').'</td>';
+            $html .= '<td>Rp'.number_format($totalKeuntungan, 0,".",'.').'</td>';
         } 
-    $html .= '</tr>
+    '</tr>
 </tfoot>
 </table>
 </body>

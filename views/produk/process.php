@@ -13,11 +13,12 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
         $url = $_POST['url']; // Mengambil nilai 'url' dari input POST
         $jumlah = $_POST['jumlah']; // Mengambil nilai 'jumlah' dari input POST
         $harga = $_POST['harga']; // Mengambil nilai 'harga' dari input POST
+        $harga_asli = $_POST['harga_asli']; // Mengambil nilai 'harga_asli' dari input POST
 
         if ($category == 'tambah') { // Jika 'category' adalah 'tambah'
-            $stmt = $db->prepare("INSERT INTO produk (nama_produk, gambar_produk, jumlah_produk_kg, harga_produk) VALUES (:nama, :gambar, :jumlah, :harga) ");
+            $stmt = $db->prepare("INSERT INTO produk (nama_produk, gambar_produk, jumlah_produk_kg, harga_produk, harga_produk_asli) VALUES (:nama, :gambar, :jumlah, :harga, :harga_asli) ");
         } elseif ($category == 'edit') { // Jika 'category' adalah 'edit'
-            $stmt = $db->prepare("UPDATE produk SET nama_produk = :nama, gambar_produk = :gambar, jumlah_produk_kg = :jumlah, harga_produk = :harga WHERE id = :id");
+            $stmt = $db->prepare("UPDATE produk SET nama_produk = :nama, gambar_produk = :gambar, jumlah_produk_kg = :jumlah, harga_produk = :harga, harga_produk_asli = :harga_asli WHERE id = :id");
 
             $id = $_POST['id']; // Mengambil nilai 'id' dari input POST
             $stmt->bindParam(':id', $id); // Mengikat parameter ':id' dengan nilai 'id'
@@ -27,6 +28,7 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
         $stmt->bindParam(':gambar', $url); // Mengikat parameter ':gambar' dengan nilai 'url'
         $stmt->bindParam(':jumlah', $jumlah); // Mengikat parameter ':jumlah' dengan nilai 'jumlah'
         $stmt->bindParam(':harga', $harga); // Mengikat parameter ':harga' dengan nilai 'harga'
+        $stmt->bindParam(':harga_asli', $harga_asli); // Mengikat parameter ':harga_asli' dengan nilai 'harga'
 
         $stmt->execute(); // Menjalankan query untuk menyimpan data produk
 

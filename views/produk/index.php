@@ -40,9 +40,14 @@ ob_start(); // Memulai penampungan output
                             <div class="invalid-feedback error-jumlah"></div>
                         </div>
                         <div class="form-group">
-                            <label for="harga">Harga Produk (kg)</label>
+                            <label for="harga">Harga Jual Produk (kg)</label>
                             <input type="text" class="form-control harga" name="harga" id="harga" placeholder="masukkan harga produk">
                             <div class="invalid-feedback error-harga"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="harga-asli">Harga Asli Produk (kg)</label>
+                            <input type="text" class="form-control harga_asli" name="harga_asli" id="harga-asli" placeholder="masukkan harga asli produk">
+                            <div class="invalid-feedback error-harga_asli"></div>
                         </div>
                     </div>
                 </div>
@@ -81,7 +86,8 @@ ob_start(); // Memulai penampungan output
                             <th>Gambar Produk</th>
                             <th>Nama</th>
                             <th>Jumlah (kg)</th>
-                            <th>Harga (kg)</th>
+                            <th>Harga Asli(kg)</th>
+                            <th>Harga Jual(kg)</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -92,6 +98,7 @@ ob_start(); // Memulai penampungan output
                                 <td><img src="<?= $value['gambar_produk']; ?>" width="100px"></td>
                                 <td><?= $value['nama_produk']; ?></td>
                                 <td><?= $value['jumlah_produk_kg']; ?>kg</td>
+                                <td>Rp<?= number_format($value['harga_produk_asli'], 0, ",", ".") ?></td>
                                 <td>Rp<?= number_format($value['harga_produk'], 0, ",", ".") ?></td>
                                 <td>
                                     <button class="btn btn-modal btn-default" data-id="<?= $value['id']; ?>" data-cat='edit'>
@@ -157,6 +164,7 @@ require_once('../../templates/master.php');
                         $('.url').val(response.gambar_produk);
                         $('.jumlah').val(response.jumlah_produk_kg);
                         $('.harga').val(response.harga_produk);
+                        $('.harga_asli').val(response.harga_produk_asli);
                         // Mengisi nilai pada elemen-elemen input dengan data yang diterima
                     }
                 });
@@ -186,7 +194,7 @@ require_once('../../templates/master.php');
                     isValid = false;
                     $input.addClass('is-invalid');
                     $('.error-' + inputName).text('Field harus diisi.');
-                } else if (inputName === 'jumlah' || inputName === 'harga') {
+                } else if (inputName === 'jumlah' || inputName === 'harga' || inputName === 'harga_asli') {
                     if (!$.isNumeric(inputValue)) {
                         isValid = false;
                         $input.addClass('is-invalid');
