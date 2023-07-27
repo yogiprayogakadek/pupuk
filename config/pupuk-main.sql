@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Jul 15, 2023 at 01:10 PM
+-- Generation Time: Jul 27, 2023 at 02:36 AM
 -- Server version: 10.4.24-MariaDB
 -- PHP Version: 8.1.6
 
@@ -59,20 +59,9 @@ CREATE TABLE `detail_transaksi` (
 --
 
 INSERT INTO `detail_transaksi` (`id`, `id_transaksi`, `id_produk`, `kuantitas`) VALUES
-(4, 4, 1, 10);
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pembelian`
---
-
-CREATE TABLE `pembelian` (
-  `id` int(11) NOT NULL,
-  `id_pengguna` int(11) NOT NULL,
-  `id_produk` int(11) NOT NULL,
-  `jumlah_beli_produk` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+(4, 4, 1, 10),
+(5, 5, 2, 2),
+(6, 5, 1, 3);
 
 -- --------------------------------------------------------
 
@@ -128,15 +117,17 @@ CREATE TABLE `produk` (
   `nama_produk` varchar(255) NOT NULL,
   `gambar_produk` varchar(255) NOT NULL,
   `jumlah_produk_kg` int(11) NOT NULL,
-  `harga_produk` int(11) NOT NULL
+  `harga_produk` int(11) NOT NULL,
+  `harga_produk_asli` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
 -- Dumping data for table `produk`
 --
 
-INSERT INTO `produk` (`id`, `nama_produk`, `gambar_produk`, `jumlah_produk_kg`, `harga_produk`) VALUES
-(1, 'Pupuk Organik', 'https://storage.googleapis.com/pkg-portal-bucket/images/news/2019-03/pupuk-organik-demi-keberlanjutan-pertanian/pg_pupuk-petroganik.jpg', 99, 10000);
+INSERT INTO `produk` (`id`, `nama_produk`, `gambar_produk`, `jumlah_produk_kg`, `harga_produk`, `harga_produk_asli`) VALUES
+(1, 'Pupuk Organik', 'https://storage.googleapis.com/pkg-portal-bucket/images/news/2019-03/pupuk-organik-demi-keberlanjutan-pertanian/pg_pupuk-petroganik.jpg', 96, 10000, 9000),
+(2, 'Pupuk Kompos', 'https://siplahtelkom.com/public/products/130908/3903409/pupuk-kompos-or.1669105490.jpg', 98, 15000, 13000);
 
 -- --------------------------------------------------------
 
@@ -157,7 +148,8 @@ CREATE TABLE `transaksi` (
 --
 
 INSERT INTO `transaksi` (`id`, `id_pengguna`, `tanggal_transaksi`, `total`, `is_done`) VALUES
-(4, 6, '2023-07-15', 100000, 1);
+(4, 6, '2023-07-15', 100000, 1),
+(5, 6, '2023-07-26', 60000, 1);
 
 --
 -- Indexes for dumped tables
@@ -177,14 +169,6 @@ ALTER TABLE `detail_transaksi`
   ADD PRIMARY KEY (`id`),
   ADD KEY `fk_detail_transaksi_transaksi` (`id_transaksi`),
   ADD KEY `fk_detail_transaksi_produk` (`id_produk`);
-
---
--- Indexes for table `pembelian`
---
-ALTER TABLE `pembelian`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `fk_pembelian_produk` (`id_produk`),
-  ADD KEY `fk_pembelian_pengguna` (`id_pengguna`);
 
 --
 -- Indexes for table `pengguna`
@@ -226,13 +210,7 @@ ALTER TABLE `admin`
 -- AUTO_INCREMENT for table `detail_transaksi`
 --
 ALTER TABLE `detail_transaksi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT for table `pembelian`
---
-ALTER TABLE `pembelian`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `pengguna`
@@ -250,13 +228,13 @@ ALTER TABLE `petani`
 -- AUTO_INCREMENT for table `produk`
 --
 ALTER TABLE `produk`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `transaksi`
 --
 ALTER TABLE `transaksi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- Constraints for dumped tables
@@ -274,13 +252,6 @@ ALTER TABLE `admin`
 ALTER TABLE `detail_transaksi`
   ADD CONSTRAINT `fk_detail_transaksi_produk` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id`) ON DELETE CASCADE,
   ADD CONSTRAINT `fk_detail_transaksi_transaksi` FOREIGN KEY (`id_transaksi`) REFERENCES `transaksi` (`id`) ON DELETE CASCADE;
-
---
--- Constraints for table `pembelian`
---
-ALTER TABLE `pembelian`
-  ADD CONSTRAINT `fk_pembelian_pengguna` FOREIGN KEY (`id_pengguna`) REFERENCES `pengguna` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_pembelian_produk` FOREIGN KEY (`id_produk`) REFERENCES `produk` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `petani`
