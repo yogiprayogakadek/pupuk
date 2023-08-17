@@ -63,21 +63,36 @@ if ($category == 'addCart') {
                 $response['message'] = 'Produk sudah ada pada keranjang'; // Menetapkan pesan info
                 $response['title'] = 'Info'; // Menetapkan judul info
             } else {
-                $sql = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) "); // Menyiapkan query untuk menyisipkan data baru ke dalam tabel 'detail_transaksi'
-                $sql->bindParam(':id_transaksi', $dataCheck['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil pemeriksaan transaksi sebelumnya
-                $sql->bindParam(':id_produk', $id_produk); // Mengikat parameter ':id_produk' dengan nilai 'id_produk'
-                $sql->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
-                $sql->execute(); // Menjalankan query
-
-                // Periksa apakah operasi berhasil
-                if ($sql->rowCount() > 0) { // Jika penyisipan data berhasil
-                    $response['status'] = 'success'; // Menetapkan status 'success' pada respon
-                    $response['message'] = 'Produk berhasil ditambahkan ke keranjang'; // Menetapkan pesan sukses
-                    $response['title'] = 'Berhasil'; // Menetapkan judul sukses
-                } else {
-                    $response['status'] = 'error'; // Menetapkan status 'error' pada respon
-                    $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+                $tot = 0;
+                // check total quantity
+                $newQuery = $db->prepare("SELECT SUM(b.kuantitas) as total
+                                FROM transaksi a 
+                                JOIN detail_transaksi b ON a.id = b.id_transaksi
+                                WHERE a.id_pengguna = :id_pengguna AND a.is_done = 0");
+                $newQuery->bindParam(':id_pengguna', $_SESSION['id_pengguna']);
+                $newQuery->execute();
+                $checkQtyTotal = $newQuery->fetch(PDO::FETCH_ASSOC);
+                if(($checkQtyTotal['total'] + $kuantitas) > ($_SESSION['luas_tanah']/2)) {
+                    $response['status'] = 'info'; // Menetapkan status 'error' pada respon
+                    $response['message'] = 'Kapasitas belanja bulanan tidak mencukupi'; // Menetapkan pesan kesalahan
                     $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
+                } else {
+                    $sql = $db->prepare("INSERT INTO detail_transaksi (id_transaksi, id_produk, kuantitas) VALUES (:id_transaksi, :id_produk, :kuantitas) "); // Menyiapkan query untuk menyisipkan data baru ke dalam tabel 'detail_transaksi'
+                    $sql->bindParam(':id_transaksi', $dataCheck['id']); // Mengikat parameter ':id_transaksi' dengan nilai 'id' dari hasil pemeriksaan transaksi sebelumnya
+                    $sql->bindParam(':id_produk', $id_produk); // Mengikat parameter ':id_produk' dengan nilai 'id_produk'
+                    $sql->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
+                    $sql->execute(); // Menjalankan query
+    
+                    // Periksa apakah operasi berhasil
+                    if ($sql->rowCount() > 0) { // Jika penyisipan data berhasil
+                        $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+                        $response['message'] = 'Produk berhasil ditambahkan ke keranjang'; // Menetapkan pesan sukses
+                        $response['title'] = 'Berhasil'; // Menetapkan judul sukses
+                    } else {
+                        $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+                        $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+                        $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
+                    }
                 }
             }
         }
@@ -153,6 +168,7 @@ if ($category == 'addCart') {
             $response['status'] = 'success'; // Menetapkan status 'success' pada respon
             $response['message'] = 'Data berhasil di proses'; // Menetapkan pesan sukses
             $response['title'] = 'Berhasil'; // Menetapkan judul sukses
+            $response['id_transaksi'] = $data['id'];
         } else {
             $response['status'] = 'error'; // Menetapkan status 'error' pada respon
             $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
@@ -196,21 +212,36 @@ if ($category == 'addCart') {
     try {
         $kuantitas = $_POST['kuantitas']; // Mengambil nilai 'kuantitas' dari input POST
         $id_detail_transaksi = $_POST['id_detail_transaksi']; // Mengambil nilai 'id_detail_transaksi' dari input POST
-
-        $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id"); // Menyiapkan query untuk mengupdate 'kuantitas' pada 'detail_transaksi' berdasarkan 'id_detail_transaksi'
-        $stmt->bindParam(':id', $id_detail_transaksi); // Mengikat parameter ':id' dengan nilai 'id_detail_transaksi'
-        $stmt->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
-        $stmt->execute(); // Menjalankan query
-
-        if ($stmt->rowCount() > 0) { // Jika ada perubahan data pada 'detail_transaksi'
-            $response['status'] = 'success'; // Menetapkan status 'success' pada respon
-            $response['message'] = 'Data berhasil di proses'; // Menetapkan pesan sukses
-            $response['title'] = 'Berhasil'; // Menetapkan judul sukses
-        } else {
-            $response['status'] = 'error'; // Menetapkan status 'error' pada respon
-            $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+        // get total kuantitas
+        $query = "SELECT SUM(b.kuantitas) as total
+                    FROM transaksi a 
+                    JOIN detail_transaksi b ON a.id = b.id_transaksi
+                    WHERE a.id_pengguna = :id_pengguna AND a.is_done = 0";
+        $q = $db->prepare($query);
+        $q->bindParam(':id_pengguna', $_SESSION['id_pengguna']);
+        $q->execute();
+        $data = $q->fetch(PDO::FETCH_ASSOC);
+        if (($data['total'] - $_POST['kuantitasCart'] + $kuantitas) > ($_SESSION['luas_tanah'] / 2)) {
+            $response['status'] = 'info'; // Menetapkan status 'error' pada respon
+            $response['message'] = 'Kuantitas melebihi batas belanja bulanan sebesar' . ($_SESSION['luas_tanah'] / 2) . ' kg'; // Menetapkan pesan kesalahan
             $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
+        } else {
+            $stmt = $db->prepare("UPDATE detail_transaksi SET kuantitas = :kuantitas WHERE id = :id"); // Menyiapkan query untuk mengupdate 'kuantitas' pada 'detail_transaksi' berdasarkan 'id_detail_transaksi'
+            $stmt->bindParam(':id', $id_detail_transaksi); // Mengikat parameter ':id' dengan nilai 'id_detail_transaksi'
+            $stmt->bindParam(':kuantitas', $kuantitas); // Mengikat parameter ':kuantitas' dengan nilai 'kuantitas'
+            $stmt->execute(); // Menjalankan query
+
+            if ($stmt->rowCount() > 0) { // Jika ada perubahan data pada 'detail_transaksi'
+                $response['status'] = 'success'; // Menetapkan status 'success' pada respon
+                $response['message'] = 'Data berhasil di proses'; // Menetapkan pesan sukses
+                $response['title'] = 'Berhasil'; // Menetapkan judul sukses
+            } else {
+                $response['status'] = 'error'; // Menetapkan status 'error' pada respon
+                $response['message'] = 'Tidak ada perubahan data'; // Menetapkan pesan kesalahan
+                $response['title'] = 'Gagal'; // Menetapkan judul kesalahan
+            }
         }
+
 
         header('Content-Type: application/json'); // Mengatur header respon yang tepat
 
@@ -219,5 +250,41 @@ if ($category == 'addCart') {
     } catch (PDOException $e) {
         echo "Error occurred: " . $e->getMessage(); // Menampilkan pesan kesalahan jika terjadi exception
         exit; // Menghentikan eksekusi kode selanjutnya
+    }
+} elseif ($category == 'getDataQty') {
+    try {
+        $query = "SELECT SUM(b.kuantitas) as total
+                    FROM transaksi a 
+                    JOIN detail_transaksi b ON a.id = b.id_transaksi
+                    WHERE a.id_pengguna = :id_pengguna AND a.is_done = 0";
+        $stmt = $db->prepare($query);
+        $stmt->bindParam(':id_pengguna', $_SESSION['id_pengguna']);
+        $stmt->execute();
+
+        $data = $stmt->fetch(PDO::FETCH_ASSOC); // Mengambil hasil query sebagai array asosiatif
+
+        $batas = 0;
+        if ($data['total'] == null) {
+            $q = "SELECT SUM(b.kuantitas) as total
+                    FROM transaksi a 
+                    JOIN detail_transaksi b ON a.id = b.id_transaksi
+                    WHERE a.id_pengguna = :id_pengguna AND a.is_done = 1
+                    AND MONTH(a.tanggal_transaksi) = MONTH(NOW())
+                    AND YEAR(a.tanggal_transaksi) = YEAR(NOW())";
+            $exec = $db->prepare($q);
+            $exec->bindParam(':id_pengguna', $_SESSION['id_pengguna']);
+            $exec->execute();
+
+            $column = $exec->fetch(PDO::FETCH_ASSOC);
+            $batas = (int)$column['total'];
+        }
+
+        header('Content-Type: application/json'); // Mengatur header respon yang tepat
+        echo json_encode([
+            'total' => (int)$data['total'],
+            'batas' => $batas
+        ]);
+    } catch (PDOException $e) {
+        echo "Error occurred: " . $e->getMessage(); // Menampilkan pesan kesalahan jika terjadi exception
     }
 }

@@ -1,5 +1,4 @@
 <?php require_once('./config/config.php'); ?>
-x   
 <!DOCTYPE html>
 <html lang="en">
 

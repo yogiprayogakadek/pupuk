@@ -104,9 +104,9 @@ ob_start(); // Memulai penampungan output
                                     <button class="btn btn-modal btn-default" data-id="<?= $value['id']; ?>" data-cat='edit'>
                                         <i class="fa fa-pencil text-success mr-2 pointer"></i>
                                     </button>
-                                    <button class="btn btn-delete btn-danger" data-id="<?= $value['id']; ?>">
+                                    <!-- <button class="btn btn-delete btn-danger" data-id="<?= $value['id']; ?>">
                                         <i class="fa fa-trash text-white mr-2 pointer"></i>
-                                    </button>
+                                    </button> -->
                                 </td>
                             </tr>
                         <?php endforeach; ?>

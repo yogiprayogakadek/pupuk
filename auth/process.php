@@ -28,6 +28,11 @@
             $query->execute(); // Menjalankan query
             $_SESSION['nama_lengkap'] = $user['nama_lengkap']; // Menyimpan 'nama_lengkap' dalam session
 
+            if($_SESSION['role'] == 0) {
+                $petani = $query->fetch(PDO::FETCH_ASSOC);
+                $_SESSION['luas_tanah'] = $petani['luas_tanah'];
+            }
+
             header('Location: ' . $baseUrl); // Mengalihkan pengguna ke halaman beranda setelah berhasil login
             exit;
         } else {

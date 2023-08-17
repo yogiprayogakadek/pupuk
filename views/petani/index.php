@@ -4,7 +4,7 @@ $pageTitle = 'Petani';
 $pageSub = 'Data';
 
 $db = databaseConnection(); // Membuat koneksi ke database
-$query = "SELECT a.username, b.nama_lengkap, b.alamat, a.id as id_pengguna
+$query = "SELECT a.username, b.nama_lengkap, b.alamat, b.luas_tanah, a.id as id_pengguna
             FROM pengguna a
             JOIN petani b
             ON a.id = b.id_pengguna
@@ -21,7 +21,7 @@ ob_start(); // Memulai penampungan output
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Modal</h5>
+                <h5 class="modal-title">Data Petani</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
@@ -43,6 +43,11 @@ ob_start(); // Memulai penampungan output
                             <label for="alamat">Alamat</label>
                             <input type="text" class="form-control alamat" name="alamat" id="alamat" placeholder="masukkan alamat">
                             <div class="invalid-feedback error-alamat"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="luas">Luas Tanah (dalam are)</label>
+                            <input type="text" class="form-control luas" name="luas" id="luas" placeholder="masukkan luas tanah">
+                            <div class="invalid-feedback error-luas"></div>
                         </div>
                     </div>
                 </div>
@@ -81,6 +86,7 @@ ob_start(); // Memulai penampungan output
                             <th>Nama Lengkap</th>
                             <th>Username</th>
                             <th>Alamat</th>
+                            <th>Luas Tanah</th>
                             <th>Aksi</th>
                         </tr>
                     </thead>
@@ -91,6 +97,7 @@ ob_start(); // Memulai penampungan output
                                 <td><?= $value['nama_lengkap']; ?></td>
                                 <td><?= $value['username']; ?></td>
                                 <td><?= $value['alamat']; ?></td>
+                                <td><?= $value['luas_tanah']; ?> are</td>
                                 <td>
                                     <button class="btn btn-modal btn-default" data-id="<?= $value['id_pengguna']; ?>" data-cat='edit'>
                                         <i class="fa fa-pencil text-success mr-2 pointer"></i>
@@ -153,6 +160,7 @@ require_once('../../templates/master.php');
                     $('.nama').val(response.nama_lengkap);
                     $('.username').val(response.username);
                     $('.alamat').val(response.alamat);
+                    $('.luas').val(response.luas_tanah);
                 }
             });
         } else {

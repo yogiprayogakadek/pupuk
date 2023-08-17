@@ -190,7 +190,7 @@ if (!isset($_SESSION['username'])) {
     <script src="http://gull-html-laravel.ui-lib.com/assets/js/datatables.script.js"></script>
 
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/gasparesganga-jquery-loading-overlay@2.1.7/dist/loadingoverlay.min.js"></script>
     <script>
         var table = $('#tableData').DataTable({
             language: {

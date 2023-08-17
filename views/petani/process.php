@@ -13,6 +13,7 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
         $nama = $_POST['nama']; // Mengambil nilai 'nama' dari input POST
         $username = $_POST['username']; // Mengambil nilai 'username' dari input POST
         $alamat = $_POST['alamat']; // Mengambil nilai 'alamat' dari input POST
+        $luas = $_POST['luas']; // Mengambil nilai 'luas' dari input POST
 
         if ($category == 'tambah') { // Jika 'category' adalah 'tambah'
             $password = password_hash($_POST['password'], PASSWORD_DEFAULT); // Mengenkripsi kata sandi menggunakan password_hash()
@@ -26,9 +27,10 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
 
             $lastInsertedId = $db->lastInsertId(); // Mendapatkan ID terakhir yang dimasukkan ke database
             if ($stmt->rowCount() > 0) {
-                $petani = $db->prepare("INSERT INTO petani (nama_lengkap, alamat, id_pengguna) VALUES (:nama, :alamat, :id_pengguna) ");
+                $petani = $db->prepare("INSERT INTO petani (nama_lengkap, alamat, luas_tanah, id_pengguna) VALUES (:nama, :alamat, :luas_tanah, :id_pengguna) ");
                 $petani->bindParam(':nama', $nama); // Mengikat parameter ':nama' dengan nilai 'nama'
                 $petani->bindParam(':alamat', $alamat); // Mengikat parameter ':alamat' dengan nilai 'alamat'
+                $petani->bindParam(':luas_tanah', $luas); // Mengikat parameter ':alamat' dengan nilai 'alamat'
                 $petani->bindParam(':id_pengguna', $lastInsertedId); // Mengikat parameter ':id_pengguna' dengan nilai 'lastInsertedId'
                 $petani->execute(); // Menjalankan query untuk menyimpan data petani
             }
@@ -41,9 +43,10 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
             $stmt->bindParam(':username', $username); // Mengikat parameter ':username' dengan nilai 'username'
             $stmt->execute(); // Menjalankan query untuk mengupdate 'username'
 
-            $petani = $db->prepare("UPDATE petani SET nama_lengkap = :nama, alamat = :alamat WHERE id_pengguna = :id_pengguna");
+            $petani = $db->prepare("UPDATE petani SET nama_lengkap = :nama, alamat = :alamat, luas_tanah = :luas_tanah WHERE id_pengguna = :id_pengguna");
             $petani->bindParam(':nama', $nama); // Mengikat parameter ':nama' dengan nilai 'nama'
             $petani->bindParam(':alamat', $alamat); // Mengikat parameter ':alamat' dengan nilai 'alamat'
+            $petani->bindParam(':luas_tanah', $luas); // Mengikat parameter ':alamat' dengan nilai 'alamat'
             $petani->bindParam(':id_pengguna', $id); // Mengikat parameter ':id_pengguna' dengan nilai 'id'
             $petani->execute(); // Menjalankan query untuk mengupdate data petani
         }
@@ -62,7 +65,7 @@ if ($category == 'tambah' || $category == 'edit') { // Jika 'category' adalah 't
     echo json_encode($response); // Mengembalikan respon dalam format JSON
 } elseif ($category == 'getData') { // Jika 'category' adalah 'getData'
     $id = $_POST['id']; // Mengambil nilai 'id' dari input POST
-    $stmt = $db->prepare("SELECT b.nama_lengkap, b.alamat, a.username
+    $stmt = $db->prepare("SELECT b.nama_lengkap, b.alamat, b.luas_tanah, a.username
                             FROM pengguna a
                             JOIN petani b
                             ON a.id = b.id_pengguna

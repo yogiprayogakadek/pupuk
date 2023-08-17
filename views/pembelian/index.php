@@ -20,6 +20,16 @@ $query2 = "SELECT a.id, a.kuantitas, c.nama_produk, c.harga_produk, c.gambar_pro
 $prep = $db->query($query2);
 $data = $prep->fetchAll(); // Mengambil hasil query sebagai array
 
+// checkTotalQty
+$newQuery = $db->prepare("SELECT SUM(b.kuantitas) as total
+                FROM transaksi a 
+                JOIN detail_transaksi b ON a.id = b.id_transaksi
+                WHERE a.id_pengguna = :id_pengguna AND a.is_done = 1
+                AND MONTH(a.tanggal_transaksi) = MONTH(NOW())
+                AND YEAR(a.tanggal_transaksi) = YEAR(NOW())");
+$newQuery->bindParam(':id_pengguna', $_SESSION['id_pengguna']);
+$newQuery->execute();
+$detailTransaksi = $newQuery->fetch(PDO::FETCH_ASSOC);
 ob_start(); // Memulai penampungan output
 ?>
 
@@ -37,7 +47,7 @@ ob_start(); // Memulai penampungan output
                         <!-- <input type="hidden" class="form-control id-produk" name="id_produk"> -->
                         <div class="form-group">
                             <label for="kuantitas">Kuantitas</label>
-                            <input type="text" class="form-control kuantitas" name="kuantitas" id="kuantitas" placeholder="masukkan kuantitas" max="10">
+                            <input type="text" class="form-control kuantitas" name="kuantitas" id="kuantitas" placeholder="masukkan kuantitas" max="10" autocomplete="off">
                             <div class="invalid-feedback error-kuantitas"></div>
                         </div>
                     </div>
@@ -51,6 +61,19 @@ ob_start(); // Memulai penampungan output
     </div>
 </div>
 
+<div class="card mb-3 card-info-total">
+    <div class="card-header bg-info text-white">
+        <div class="row">
+            <div class="col-11">
+                <p>Jumlah pupuk yang dapat anda beli pada bulan ini adalah <?= ($_SESSION['luas_tanah'] / 2); ?> kg sisa belanja bulan ini adalah <?= ($_SESSION['luas_tanah'] / 2) - $detailTransaksi['total']; ?> kg</p>
+            </div>
+            <div class="col-1 btn-close" style="text-align: end; cursor: pointer;">
+                <i class="fa fa-times"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="row">
     <div class="col-5">
         <div class="card mb-4">
@@ -58,6 +81,9 @@ ob_start(); // Memulai penampungan output
                 <div class="row">
                     <div class="col-12">
                         Data Produk
+                        <a href="#" class="download-invoice" target="_blank">
+                            <button class="btn btn-primary" hidden>Download</button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -191,11 +217,31 @@ require_once('../../templates/master.php');
 
         $('body').on('click', '.btn-cart', function() {
             // Ketika tombol dengan class "btn-cart" diklik
-
-            $('#modal').modal('show');
-            // Menampilkan modal dengan id "modal"
-
             let cat = $(this).data('cat');
+            if (cat != 'addCart') {
+                $('#modal').modal('show');
+                localStorage.setItem('kuantitasCart', $(this).data('kuantitas'))
+                return false;
+            }
+            $.ajax({
+                type: "POST",
+                url: "process.php",
+                data: {
+                    category: 'getDataQty'
+                },
+                success: function(data) {
+                    // $('#modal').modal('show');
+                    if (data.batas < <?= ($_SESSION['luas_tanah'] / 2); ?>) {
+                        if (data.total < <?= ($_SESSION['luas_tanah'] / 2); ?>) {
+                            $('#modal').modal('show');
+                            // Menampilkan modal dengan id "modal"
+                            return false;
+                        }
+                    }
+                    Swal.fire('Info', 'Total belanja bulanan tidak mencukupi', 'info');
+                }
+            });
+
             // Mengambil data kategori dari tombol yang diklik
             localStorage.setItem('maxWeight', parseInt($(this).data('max')));
             localStorage.setItem('category', cat);
@@ -234,9 +280,15 @@ require_once('../../templates/master.php');
                 $('.error-kuantitas').html('Kuantitas melebihi stok yang tersedia');
                 $('.btn-save').prop('disabled', true);
             } else {
-                $(this).removeClass('is-invalid');
-                $('.error-kuantitas').html('');
-                $('.btn-save').prop('disabled', false);
+                if (parseInt(value) > <?= ($_SESSION['luas_tanah'] / 2); ?>) {
+                    $(this).addClass('is-invalid');
+                    $('.error-kuantitas').html('Kuantitas melebihi batasan beli bulanan');
+                    $('.btn-save').prop('disabled', true);
+                } else {
+                    $(this).removeClass('is-invalid');
+                    $('.error-kuantitas').html('');
+                    $('.btn-save').prop('disabled', false);
+                }
             }
             // Validasi input kuantitas, memeriksa jika angka tidak valid atau melebihi stok yang tersedia
         });
@@ -275,6 +327,9 @@ require_once('../../templates/master.php');
                 let form = $("#form")[0];
                 let data = new FormData(form);
                 data.append('category', localStorage.getItem('category'));
+                if (localStorage.getItem('category') == 'updateCart') {
+                    data.append('kuantitasCart', localStorage.getItem('kuantitasCart'))
+                }
                 $.ajax({
                     type: "POST",
                     url: 'process.php',
@@ -358,9 +413,22 @@ require_once('../../templates/master.php');
                         },
                         success: function(response) {
                             Swal.fire(response.title, response.message, response.status);
-                            setTimeout(() => {
-                                location.reload();
-                            }, 1500);
+                            if (response.status == 'success') {
+                                $('.download-invoice').attr('href', 'generate-invoice.php?id_transaksi=' + response.id_transaksi)
+
+                                $.LoadingOverlay("show", {
+                                    image: "",
+                                    text: "Print invoice..."
+                                });
+                                window.open($('.download-invoice').attr('href'))
+                                setTimeout(function() {
+                                    $.LoadingOverlay("hide");
+                                    location.reload();
+                                }, 3000);
+                            }
+                            // setTimeout(() => {
+                            //     location.reload();
+                            // }, 1500);
                         }
                     });
                 }
@@ -438,5 +506,9 @@ require_once('../../templates/master.php');
         $('#sum-harga').text('Rp' + sumHarga.toLocaleString('id-ID', {
             minimumFractionDigits: 0
         }));
+
+        $('body').on('click', '.btn-close', function() {
+            $('.card-info-total').remove()
+        });
     });
 </script>
